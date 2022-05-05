@@ -17,6 +17,13 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         rust: [stable]
+        include:
+          - os: macos-latest
+            version: macos
+          - os: ubuntu-latest
+            version: linux
+          - os: windows-latest
+            version: windows
 
     steps:
       - uses: actions/checkout@v3
@@ -41,4 +48,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: lsi_${{ matrix.os }}.zip
+          files: lsi_${{ matrix.version }}.zip

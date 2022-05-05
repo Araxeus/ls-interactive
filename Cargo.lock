@@ -89,7 +89,7 @@ checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
 
 [[package]]
 name = "ls-interactive"
-version = "1.0.1"
+version = "1.0.3"
 dependencies = [
  "console",
  "dialoguer",

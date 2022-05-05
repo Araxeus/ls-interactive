@@ -2,7 +2,7 @@
 name = "ls-interactive"
 description = "Interactive ls command"
 authors = ["Araxeus <oaeben@gmail.com>"]
-version = "1.0.1"
+version = "1.0.3"
 license = "MIT"
 edition = "2021"
 readme = "README.md"
