@@ -19,12 +19,15 @@ jobs:
         rust: [stable]
         include:
           - os: macos-latest
-            version: macos
+            filename: macos
           - os: ubuntu-latest
-            version: linux
+            filename: linux
           - os: windows-latest
-            version: windows
+            filename: windows 
 
+    env:
+      FILENAME: lsi_${{ matrix.filename }}_${GITHUB_REF#refs/tags/}.zip
+    
     steps:
       - uses: actions/checkout@v3
 
@@ -38,14 +41,14 @@ jobs:
       - name: Zip
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: Compress-Archive "target/release/lsi.exe" lsi_${{ matrix.os }}.zip -Force
+        run: Compress-Archive "target/release/lsi.exe" $Env:FILENAME -Force
 
       - name: Zip
         if: matrix.os != 'windows-latest'
         shell: sh
-        run: zip -r -FS lsi_${{ matrix.os }}.zip "target/release/lsi"
+        run: zip -r -FS $FILENAME "target/release/lsi"
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: lsi_${{ matrix.version }}.zip
+          files: $FILENAME
