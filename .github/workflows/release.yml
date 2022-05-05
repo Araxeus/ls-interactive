@@ -28,10 +28,12 @@ jobs:
     steps:
       - name: Get the version
         id: version
+        shell: sh
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
       - name: Get filename
         id: filename
+        shell: sh
         run: echo ::set-output name=FILENAME::"lsi_${{ matrix.filename }}_${{ steps.version.outputs.VERSION }}.zip"
 
       - uses: actions/checkout@v3
@@ -46,7 +48,7 @@ jobs:
       - name: Zip Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: "Compress-Archive target/release/lsi.exe ${{ steps.filename.outputs.FILENAME }} -Force"
+        run: Compress-Archive target/release/lsi.exe ${{ steps.filename.outputs.FILENAME }} -Force
 
       - name: Zip Linux / MacOs
         if: matrix.os != 'windows-latest'
