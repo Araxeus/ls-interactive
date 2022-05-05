@@ -30,7 +30,7 @@ jobs:
 
       - name: Zip
         shell: bash
-        run: zip -r -FS lsi_${{ matrix.os }}.zip "target/release/lsi*(.exe)"
+        run: zip -r -FS lsi_${{ matrix.os }}.zip . -i "target/release/lsi*(.exe))"
 
       - name: Release
         uses: softprops/action-gh-release@v1
