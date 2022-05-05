@@ -21,8 +21,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --release --verbose
 
       - name: Print Dir
         shell: bash
