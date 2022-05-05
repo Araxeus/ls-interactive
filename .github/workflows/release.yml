@@ -29,8 +29,14 @@ jobs:
         run: cargo build --release --verbose
 
       - name: Zip
-        shell: bash
-        run: zip -r -FS lsi_${{ matrix.os }}.zip . -i "target/release/lsi*(.exe))"
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: Compress-Archive "target/release/lsi.exe" lsi_${{ matrix.os }}.zip -Force
+
+      - name: Zip
+        if: matrix.os != 'windows-latest'
+        shell: sh
+        run: zip -r -FS lsi_${{ matrix.os }}.zip "target/release/lsi"
 
       - name: Release
         uses: softprops/action-gh-release@v1
