@@ -26,7 +26,7 @@ jobs:
             filename: windows 
 
     env:
-      FILENAME: lsi_${{ matrix.filename }}_${GITHUB_REF#refs/tags/}.zip
+      FILENAME: lsi_${{ matrix.filename }}_${{GITHUB_REF#refs/tags/}}.zip
     
     steps:
       - uses: actions/checkout@v3
@@ -38,12 +38,12 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
 
-      - name: Zip
+      - name: Zip Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: Compress-Archive "target/release/lsi.exe" $Env:FILENAME -Force
 
-      - name: Zip
+      - name: Zip Linux / MacOs
         if: matrix.os != 'windows-latest'
         shell: sh
         run: zip -r -FS $FILENAME "target/release/lsi"
