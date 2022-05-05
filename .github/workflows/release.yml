@@ -8,7 +8,6 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
 
-
 jobs:
   release:
     name: release ${{ matrix.make.name }} (${{ matrix.os }})
@@ -21,9 +20,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - uses: Swatinem/rust-cache@v1
         with:
           key: ${{ matrix.os }}
+
       - name: Build
         run: cargo build --release --verbose
 
@@ -34,4 +35,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "target/release/lsi.*"
+          files: "target/release/lsi*(.exe)"
