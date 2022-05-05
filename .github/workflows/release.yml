@@ -26,23 +26,6 @@ jobs:
             filename: windows
 
     steps:
-      - name: Get the version
-        id: version
-        shell: sh
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-
-      - name: Get filename (Linux | MacOS)
-        if: matrix.os != 'windows-latest'
-        id: filename_unix
-        shell: sh
-        run: echo ::set-output name=FILENAME::"lsi_${{ steps.version.outputs.VERSION }}_${{ matrix.filename }}.tar.gz"
-
-      - name: Get filename (Windows)
-        if: matrix.os == 'windows-latest'
-        id: filename_windows
-        shell: sh
-        run: echo ::set-output name=FILENAME::"lsi.exe"
-
       - uses: actions/checkout@v3
 
       - uses: Swatinem/rust-cache@v1
@@ -52,19 +35,28 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
 
-      - name: Tar
-        if: matrix.os != 'windows-latest'
-        shell: sh
-        run: tar cvzf ${{ steps.filename_unix.outputs.FILENAME }} "target/release/lsi"
-
       - name: Release (Windows)
         if: matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.filename_windows.outputs.FILENAME }}
+          files: target/release/lsi.exe
+
+      - name: Get version (Unix)
+        if: matrix.os != 'windows-latest'
+        id: version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: Get tar name (Unix)
+        if: matrix.os != 'windows-latest'
+        id: tar_name
+        run: echo ::set-output name=NAME::"lsi_${GITHUB_REF#refs/tags/}_${{ matrix.filename }}.tar.gz"
+
+      - name: Tar (Unix)
+        if: matrix.os != 'windows-latest'
+        run: tar cvzf ${{ steps.tar_name.outputs.NAME }} "target/release/lsi"
 
       - name: Release (Unix)
         if: matrix.os != 'windows-latest'
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.filename_unix.outputs.FILENAME }}
+          files: ${{ steps.tar_name.outputs.NAME }}
