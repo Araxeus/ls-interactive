@@ -24,11 +24,16 @@ jobs:
             filename: linux
           - os: windows-latest
             filename: windows 
-
-    env:
-      FILENAME: lsi_${{ matrix.filename }}_${{GITHUB_REF#refs/tags/}}.zip
     
     steps:
+      - name: Get the version
+        id: version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: Get filename
+        id: filename
+        run: echo ::set-output name=FILENAME::"lsi_${{ matrix.filename }}_${{ steps.version.outputs.VERSION }}.zip"
+
       - uses: actions/checkout@v3
 
       - uses: Swatinem/rust-cache@v1
@@ -41,14 +46,14 @@ jobs:
       - name: Zip Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: Compress-Archive "target/release/lsi.exe" $Env:FILENAME -Force
+        run: Compress-Archive "target/release/lsi.exe" ${{ steps.filename.outputs.FILENAME }} -Force
 
       - name: Zip Linux / MacOs
         if: matrix.os != 'windows-latest'
         shell: sh
-        run: zip -r -FS $FILENAME "target/release/lsi"
+        run: zip -r -FS ${{ steps.filename.outputs.FILENAME }} "target/release/lsi"
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: $FILENAME
+          files: ${{ steps.filename.outputs.FILENAME }}
