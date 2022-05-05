@@ -28,11 +28,11 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
 
-      - name: Print Dir
+      - name: Zip
         shell: bash
-        run: ls "target/release"
+        run: zip -r -FS lsi_${{ matrix.os }}.zip "target/release/lsi*(.exe)"
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "target/release/lsi*(.exe)"
+          files: lsi_${{ matrix.os }}.zip
