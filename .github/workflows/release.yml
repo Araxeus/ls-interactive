@@ -23,19 +23,26 @@ jobs:
           - os: ubuntu-latest
             filename: linux
           - os: windows-latest
-            filename: windows 
-    
+            filename: windows
+
     steps:
       - name: Get the version
         id: version
         shell: sh
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
-      - name: Get filename
+      - name: Get filename (Linux | MacOS)
+        if: matrix.os != 'windows-latest'
         id: filename
         shell: sh
-        run: echo ::set-output name=FILENAME::"lsi_${{ matrix.filename }}_${{ steps.version.outputs.VERSION }}.zip"
+        run: echo ::set-output name=FILENAME::"lsi_${{ steps.version.outputs.VERSION }}_${{ matrix.filename }}.tar.gz"
 
+      - name: Get filename (Windows)
+        if: matrix.os == 'windows-latest'
+        id: filename
+        shell: sh
+        run: echo ::set-output name=FILENAME::"lsi.exe"
+    
       - uses: actions/checkout@v3
 
       - uses: Swatinem/rust-cache@v1
@@ -45,15 +52,10 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
 
-      - name: Zip Windows
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: Compress-Archive target/release/lsi.exe ${{ steps.filename.outputs.FILENAME }} -Force
-
-      - name: Zip Linux / MacOs
+      - name: Tar
         if: matrix.os != 'windows-latest'
         shell: sh
-        run: zip -r -FS ${{ steps.filename.outputs.FILENAME }} "target/release/lsi"
+        run: tar cvzf ${{ steps.filename.outputs.FILENAME }} "target/release/lsi"
 
       - name: Release
         uses: softprops/action-gh-release@v1
