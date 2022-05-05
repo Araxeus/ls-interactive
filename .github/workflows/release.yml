@@ -24,7 +24,11 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
+      - name: Print Dir
+        shell: bash
+        run: ls "target/release"
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: target/release/lsi.*
+          files: "target/release/lsi.*"
