@@ -1,7 +1,7 @@
 [package]
 name = "ls-interactive"
 description = "Interactive ls command"
-version = "1.1.0"
+version = "1.1.2"
 authors = ["Araxeus <oaeben@gmail.com>"]
 homepage = "https://github.com/Araxeus/ls-interactive"
 license = "MIT"
