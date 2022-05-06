@@ -13,6 +13,20 @@
 
 > Interactive ls command made in rust
 
+![image](https://user-images.githubusercontent.com/78568641/167173566-8762a3a8-4dbf-492a-9883-f48760637bcd.png)
+
+## Features
+
+🌟 Navigate between folders using arrow keys + enter button
+
+🌟 Open files with native apps using <kbd>Enter</kbd>
+
+🌟 Top button (📁 ..) opens the parent directory
+
+🌟 Bottom button (💻) opens current directory in your native file explorer
+
+🌟 Press <kbd>Esc</kbd> to exit
+
 
 ## Installation
 
