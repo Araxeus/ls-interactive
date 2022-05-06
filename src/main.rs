@@ -5,8 +5,6 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
-use opener::open;
-
 struct Entry {
     name: String,
     path: String,
@@ -22,6 +20,7 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
+    human_panic::setup_panic!();
     let args: Vec<String> = env::args().collect();
     let path = if args.len() >= 2 { args[1].trim() } else { "." };
 
@@ -40,7 +39,7 @@ fn open_entry(path: &str) {
     if res.is_dir || res.is_link {
         open_entry(&res.path);
     } else {
-        open(&res.path).unwrap();
+        open::that(&res.path).unwrap();
     }
 }
 

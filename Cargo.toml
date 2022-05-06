@@ -2,7 +2,7 @@
 name = "ls-interactive"
 description = "Interactive ls command"
 authors = ["Araxeus <oaeben@gmail.com>"]
-version = "1.0.3"
+version = "1.1.0"
 license = "MIT"
 edition = "2021"
 readme = "README.md"
@@ -14,7 +14,8 @@ categories = ["command-line-utilities"]
 [dependencies]
 dialoguer = "0.10.0"
 console = "0.15.0"
-opener = "0.5.0"
+open = "2.1.2"
+human-panic = "1.0.3"
 
 [[bin]]
 name = "lsi"

@@ -18,10 +18,7 @@
 
 Download binaries from [releases page](https://github.com/Araxeus/ls-interactive/releases) and place in PATH
 
-or run:
-```bash
-curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git Araxeus/ls-interactive
-```
+Installation from package managers is coming soon
 
 ## How to run it
 
@@ -34,7 +31,7 @@ lsi some_directory
 ```
 
 ## Build it yourself
-(The binaries in release are [automatically](https://github.com/Araxeus/ls-interactive/blob/main/.github/workflows/release.yml) built by github actions)
+(The binaries in release are [automatically](https://github.com/Araxeus/ls-interactive/blob/master/.github/workflows/release.yml) built by github actions)
 
 install `rust`
 clone/download the repo
