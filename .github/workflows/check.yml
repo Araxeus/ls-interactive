@@ -11,14 +11,10 @@ jobs:
   analyze:
     name: Run checks
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      security-events: write
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with:
           profile: default
           toolchain: stable
