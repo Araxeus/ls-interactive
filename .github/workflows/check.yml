@@ -16,13 +16,12 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          profile: default
+          profile: minimal
+          components: rustfmt, clippy
           toolchain: stable
           override: true
 
       - uses: Swatinem/rust-cache@v1
-        with:
-          sharedKey: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install clippy&fmt sarif
         run: cargo install clippy-sarif sarif-fmt
@@ -46,7 +45,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -D warnings
-          name: Clippy Output
+          name: Clippy Result
+        continue-on-error: true
 
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v1
