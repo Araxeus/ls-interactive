@@ -11,44 +11,22 @@ pub const EXPLORER: &str = "💻"; //📂
 
 pub fn from_ext(ext: &str) -> &str {
     match ext {
-        // EXE
-        "exe" => EXE,
-        "bat" => EXE,
-        "ps1" => EXE,
-        "msi" => EXE,
+        "exe" | "bat" | "ps1" | "msi" | "cmd" | "com" | "pif" | "scr" | "vbs" | "vbe" | "jar"
+        | "app" | "bin" => EXE,
 
-        // PIC
-        "png" => PIC,
-        "jpg" => PIC,
-        "jpeg" => PIC,
-        "gif" => PIC,
-        "bmp" => PIC,
-        "ico" => PIC,
-        "webp" => PIC,
+        "png" | "jpg" | "jpeg" | "gif" | "bmp" | "ico" | "icn" | "webp" | "tiff" | "tif"
+        | "svg" | "pdf" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2"
+        | "jpx" => PIC,
 
-        // VID
-        "mp4" => VID,
-        "avi" => VID,
-        "mkv" => VID,
+        "mp4" | "avi" | "mkv" | "webm" | "amc" | "vp6" | "mpeg" | "mpeg-2" | "wmv" | "m4u"
+        | "264" | "ivr" | "media" | "mp5" | "flv" | "f4v" | "swf" | "video" | "ogv" | "av1"
+        | "mp4v" | "mpeg4" | "m4v" | "mpg" | "mov" | "dvr" | "movie" | "dv" | "avchd" => VID,
 
-        // MUSIC
-        "mp3" => MUSIC,
-        "wav" => MUSIC,
-        "ogg" => MUSIC,
-        "flac" => MUSIC,
-        "aac" => MUSIC,
-        "m4a" => MUSIC,
-        "wma" => MUSIC,
-        "mka" => MUSIC,
-        "m3u" => MUSIC,
-        "pls" => MUSIC,
-        "m3u8" => MUSIC,
+        "mp3" | "wav" | "wave" | "ogg" | "flac" | "aac" | "m4a" | "wma" | "mka" | "m3u" | "pls"
+        | "m3u8" | "aif" | "aiff" | "mid" | "ac3" | "opus" | "pcm" | "alac" | "weba" => MUSIC,
 
-        // LINKS
-        "url" => LINK,
-        "lnk" => LINK,
+        "url" | "lnk" => LINK,
 
-        // OTHER
         _ => TXT,
     }
 }

@@ -1,12 +1,12 @@
 [package]
 name = "ls-interactive"
 description = "Interactive ls command"
-authors = ["Araxeus <oaeben@gmail.com>"]
 version = "1.1.0"
+authors = ["Araxeus <oaeben@gmail.com>"]
+homepage = "https://github.com/Araxeus/ls-interactive"
 license = "MIT"
 edition = "2021"
 readme = "README.md"
-homepage = "https://github.com/Araxeus/ls-interactive"
 repository = "https://github.com/you/ls-interactive"
 keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "folders", "directory"]
 categories = ["command-line-utilities"]
