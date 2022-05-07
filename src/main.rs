@@ -40,7 +40,7 @@ fn get_dir(path: &str) -> Vec<Entry> {
         result_vector.push(Entry {
             name: String::from(".."),
             path: parent.to_str().unwrap().to_string(),
-            icon: Icons::DIR,
+            icon: &Icons::DIR,
             is_dir: true,
             is_link: false,
         });
@@ -59,16 +59,16 @@ fn get_dir(path: &str) -> Vec<Entry> {
                             .unwrap_or_default(),
                     )
                 } else if file_type.is_dir() {
-                    Icons::DIR
+                    &Icons::DIR
                 } else if file_type.is_symlink() {
-                    Icons::LINK
+                    &Icons::LINK
                 } else {
-                    Icons::UNKNOWN
+                    &Icons::UNKNOWN
                 };
                 result_vector.push(Entry {
                     name: entry.file_name().to_str().unwrap().to_string(),
                     path: entry.path().to_str().unwrap().to_string(),
-                    is_link: icon == Icons::LINK,
+                    is_link: icon == &Icons::LINK,
                     is_dir: file_type.is_dir(),
                     icon,
                 });
@@ -80,7 +80,7 @@ fn get_dir(path: &str) -> Vec<Entry> {
     result_vector.push(Entry {
         name: String::new(),
         path: path.to_string(),
-        icon: Icons::EXPLORER,
+        icon: &Icons::EXPLORER,
         is_dir: false,
         is_link: false,
     });
