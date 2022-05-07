@@ -23,8 +23,11 @@ pub enum Filetype {
     Picture,
     Video,
     Audio,
+    Settings,
     Web,
     Rust,
+    Javascript,
+    Css,
     // other:
     Directory,
     Symlink,
@@ -33,7 +36,7 @@ pub enum Filetype {
 }
 
 impl Filetype {
-    // DELETE
+    // TODO
     // if metadata.permissions().mode() & 0o111 != 0 {
     //     Filetype::Executable
     // }
@@ -80,12 +83,20 @@ impl Filetype {
             | "pls" | "m3u8" | "aif" | "aiff" | "mid" | "ac3" | "opus" | "pcm" | "alac"
             | "weba" => Self::Audio,
 
+            "lnk" => Self::Lnk,
+
+            // Experimental // TODO
+            "toml" | "ini" | "conf" | "json" | "yaml" | "yml" | "xml" | "csv" => Self::Settings,
+
             "url" | "html" => Self::Web,
 
             "rs" => Self::Rust,
 
-            "lnk" => Self::Lnk,
+            "js" => Self::Javascript,
 
+            "css" | "scss" => Self::Css,
+
+            // Default
             _ => Self::Text,
         }
     }
@@ -113,7 +124,6 @@ impl Entry {
     }
 }
 
-#[derive(PartialEq, Eq)] // TODO delete Eq?
 pub struct Icon(&'static str);
 
 impl fmt::Display for Icon {
@@ -126,21 +136,38 @@ impl fmt::Display for Icon {
 pub struct Icons;
 
 impl Icons {
-    pub const EXE: Icon = Icon("💿");
-    pub const TXT: Icon = Icon("📄"); // 📰
-    pub const PIC: Icon = Icon("🖼️"); // 📷 🖼️
-    pub const VID: Icon = Icon("🎬"); // 📹
-    pub const MUSIC: Icon = Icon("🎵"); // 🎧 ♫ ♬
+    pub const EXE: Icon = Icon("💿"); // 💽 📀 💾
+    pub const TXT: Icon = Icon("📄"); // 📰 📝 📖 📜 📒 📓 📑 🧾 📋 📇
+    pub const PIC: Icon = Icon("🖼️"); // 📷 📸 🎨
+    pub const VID: Icon = Icon("🎬"); // 🎞️ 📺 📹 📽️ 🎥 📼
+    pub const MUSIC: Icon = Icon("🎵"); // 🎧 🔊 🎼 ♫ ♬ 📻
+    pub const DIR: Icon = Icon("📁"); // 📂
+    pub const LINK: Icon = Icon("🔗"); // 📎 🖇️
+    pub const UNKNOWN: Icon = Icon("🚫"); // ❔ ❓ ⬜
+    pub const EXPLORER: Icon = Icon("💻"); // 🗂️ 🗃️ 🗄️
 
-    pub const WEB: Icon = Icon("🌐");
-    pub const RUST: Icon = Icon("🦀"); // 📦
+    // Experimental: // TODO
+    pub const SETTINGS: Icon = Icon("⚙️"); // 🎛️ 🔧 🔨 🛠️
+    pub const WEB: Icon = Icon("🌐"); // 🌎 🌍 🌏
+    pub const RUST: Icon = Icon("🦀"); // 🦞
+    pub const JS: Icon = Icon("📒"); // 🇯 🐍 "\x1b[30;43m🇯\x1b[0m" = black on yellow
+    pub const CSS: Icon = Icon("💄"); // 💅
 
-    // TODO package files? (cargo.toml, package.json, etc)
-    pub const DIR: Icon = Icon("📁");
-    pub const LINK: Icon = Icon("🔗"); // 📎
-
-    pub const UNKNOWN: Icon = Icon("📁");
-    pub const EXPLORER: Icon = Icon("💻"); //📂
+    // TODO
+    // Packages: 📦 (cargo.toml, package.json, etc)
+    // Typescript: 📘
+    // Python:🐍
+    // C#: #️⃣
+    // Ruby: 📕 🧧 🩸 🏮 🔶
+    // CoffeeScript: 🍵
+    // Recycle bin: 🗑️
+    // Others: 〽️ 🔰 🛡️ 🧼 ➰ 🧬 🛒
+    // 🕷️ 🕸️ 🦄 🐋 💧 ☄️ 🧿 🐠 🐽 🦃 🐉 🌈 🦜 🐦💊 🛶 ⛵ 🛷️ 🛸 📚 💨
+    // ✏️ 📕 📗 📘 📙 📔 🖲️ 🖱️ ⌨️ 🔋 📟 ☎️ 📱 🎚️ 🎙️ 📯 💎 📿 🛍️ 🧶 🧵 🧸
+    // 🔮 🕹️ 🪁 🎈 🪀 🎁 🧧 🌡️ ⌛ 🧱 💈 🛎️ 💣 🗺️ 🏺️ 🗿 🗽 🧭 🧱 🧰 🧲 🧮
+    // 📏 📐 🔖 🏷️ 💰 🕯️ 💡 🪔 💳 ✉️ 📧 📮 🗳️ ✒️ 🖌️ 🖍️ 📅 📆 📈 📉 📊
+    // 🩸 🏮 🧯 📌 📍 ✂️ 💉 ⚱️ 🔐 🔒 🔓 🔑 🔨 🪓 🧴 ⚗️ 🧪 🧫 📡 🔬 💬 🐒
+    // 🔩 ⚖️ ⛓️ 🗜️ 🩺 🚿 👁️‍🗨️ 🛑 🌀 🔅 🔆 📶 ⚜️ 📛 💠 Ⓜ️ ℹ️ *️⃣ 🌴 🦂 💍 🦧
 
     pub const fn from_filetype(filetype: &Filetype) -> &'static Icon {
         match filetype {
@@ -151,8 +178,11 @@ impl Icons {
             Filetype::Audio => &Self::MUSIC,
             Filetype::Directory => &Self::DIR,
             Filetype::Symlink | Filetype::Lnk => &Self::LINK,
+            Filetype::Settings => &Self::SETTINGS,
             Filetype::Web => &Self::WEB,
             Filetype::Rust => &Self::RUST,
+            Filetype::Javascript => &Self::JS,
+            Filetype::Css => &Self::CSS,
             Filetype::Unknown => &Self::UNKNOWN,
         }
     }

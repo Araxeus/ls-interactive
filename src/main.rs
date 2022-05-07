@@ -9,6 +9,7 @@ use console::Term;
 use dialoguer::{theme::ColorfulTheme, Select};
 
 use structs::{Entry, Filetype, Icons};
+use utils::{err, resolve_lnk};
 
 fn main() {
     human_panic::setup_panic!();
@@ -19,7 +20,7 @@ fn main() {
 
     match path {
         Ok(path) => main_loop(path.to_string_lossy().to_string()),
-        Err(_) => println!("Invalid path"),
+        Err(_) => err("Invalid path"),
     }
 }
 
@@ -29,11 +30,13 @@ fn main_loop(initial_path: String) {
         let dir_menu = get_dir_menu(&path);
         let entry = &dir_menu[display_menu(&dir_menu, &path)];
         if entry.filetype.is_openable() {
-            open::that(&entry.path).unwrap();
-            break;
+            match open::that(&entry.path) {
+                Ok(_) => break,
+                Err(_) => err(format!("Failed to open file \"{}\"", &entry.path[4..])),
+            }
         }
         path = if entry.filetype == Filetype::Lnk {
-            utils::lnk_to_link(&entry.path)
+            resolve_lnk(&entry.path)
         } else {
             entry.path.to_string()
         };
