@@ -6,7 +6,7 @@ use std::path::Path;
 
 use console::Term;
 use dialoguer::{theme::ColorfulTheme, Select};
-use structs::{Icons, Entry};
+use structs::{Entry, Icons};
 
 fn main() {
     human_panic::setup_panic!();
