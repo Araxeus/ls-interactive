@@ -1,4 +1,5 @@
 mod icons;
+mod check_version;
 
 use std::env;
 use std::fmt;
@@ -21,6 +22,7 @@ impl fmt::Display for Entry {
 
 fn main() {
     human_panic::setup_panic!();
+    check_version::run();
     let args: Vec<String> = env::args().collect();
     let path = if args.len() >= 2 { args[1].trim() } else { "." };
 

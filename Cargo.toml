@@ -16,6 +16,7 @@ dialoguer = "0.10.0"
 console = "0.15.0"
 open = "2.1.2"
 human-panic = "1.0.3"
+update-informer = { version = "0.5.0", default_features = false, features = ["github"] }
 
 [[bin]]
 name = "lsi"
