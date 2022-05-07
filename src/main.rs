@@ -1,5 +1,5 @@
-mod icons;
 mod check_version;
+mod icons;
 
 use std::env;
 use std::fmt;
