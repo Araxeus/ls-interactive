@@ -5,20 +5,17 @@ use std::env;
 use std::fs;
 use std::path::Path;
 
-use console::Term;
-use dialoguer::{theme::ColorfulTheme, Select};
-
 use structs::{Entry, Filetype, Icons};
-use utils::{err, resolve_lnk};
+use utils::{display_choices, err, resolve_lnk};
 
 fn main() {
     human_panic::setup_panic!();
+
     let args: Vec<String> = env::args().collect();
+
     let path = if args.len() >= 2 { args[1].trim() } else { "." };
 
-    let path = fs::canonicalize(path);
-
-    match path {
+    match fs::canonicalize(path) {
         Ok(path) => main_loop(path.to_string_lossy().to_string()),
         Err(_) => err("Invalid path"),
     }
@@ -27,14 +24,20 @@ fn main() {
 fn main_loop(initial_path: String) {
     let mut path = initial_path;
     loop {
-        let dir_menu = get_dir_menu(&path);
-        let entry = &dir_menu[display_menu(&dir_menu, &path)];
-        if entry.filetype.is_openable() {
+        let choices = get_choices(&path);
+        // make user select a choice and get the selected Entry
+        let entry = &choices[display_choices(&choices, &path)];
+
+        // exec file
+        if entry.filetype.should_exec() {
             match open::that(&entry.path) {
+                // quit if file was opened
                 Ok(_) => break,
+                // else display error and open as directory
                 Err(_) => err(format!("Failed to open file \"{}\"", &entry.path[4..])),
             }
         }
+        // browse directory by continuing loop with new path
         path = if entry.filetype == Filetype::Lnk {
             resolve_lnk(&entry.path)
         } else {
@@ -43,7 +46,7 @@ fn main_loop(initial_path: String) {
     }
 }
 
-fn get_dir_menu(path: &str) -> Vec<Entry> {
+fn get_choices(path: &str) -> Vec<Entry> {
     let mut result_vector: Vec<Entry> = Vec::new();
 
     // .. Open parent directory
@@ -56,6 +59,7 @@ fn get_dir_menu(path: &str) -> Vec<Entry> {
         });
     }
 
+    // Get files in directory
     if let Ok(entries) = fs::read_dir(path) {
         for entry in entries.flatten() {
             result_vector.push(Entry::from_dir_entry(entry));
@@ -71,20 +75,4 @@ fn get_dir_menu(path: &str) -> Vec<Entry> {
     });
 
     result_vector
-}
-
-fn display_menu(items: &[Entry], path: &str) -> usize {
-    match Select::with_theme(&ColorfulTheme::default())
-        .with_prompt(&path[4..])
-        .report(false)
-        .items(items)
-        .default(0)
-        .interact_on_opt(&Term::stderr())
-        .ok()
-        .unwrap()
-    {
-        Some(index) => index,
-        // exit process if none
-        None => std::process::exit(0),
-    }
 }

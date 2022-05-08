@@ -41,7 +41,7 @@ impl Filetype {
     //     Filetype::Executable
     // }
 
-    pub const fn is_openable(&self) -> bool {
+    pub const fn should_exec(&self) -> bool {
         !matches!(
             self,
             Self::Directory | Self::Symlink | Self::Lnk | Self::Unknown
