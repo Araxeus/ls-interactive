@@ -30,20 +30,21 @@ jobs:
         run: cargo check
 
       - name: Rustfmt check
-        run: cargo fmt --all --check
+        run: cargo fmt --all --check -v
 
       - name: Clippy check
         run: cargo clippy
           --all-targets
           --all-features
-          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+          --message-format=json 
+          -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
         continue-on-error: true
 
       - name: Create Clippy output job
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features
+          args: --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery
           name: Clippy Result
         continue-on-error: true
 
