@@ -32,20 +32,20 @@ jobs:
       - name: Rustfmt check
         run: cargo fmt --all --check -v
 
+      - name: Create Clippy output job
+        if: success() || failure() # run regardless of prior step
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery -D warnings
+          name: Clippy Result
+
       - name: Clippy check
         run: cargo clippy
           --all-targets
           --all-features
-          --message-format=json 
+          --message-format=json
           -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
-        continue-on-error: true
-
-      - name: Create Clippy output job
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery
-          name: Clippy Result
         continue-on-error: true
 
       - name: Upload analysis results to GitHub
