@@ -12,7 +12,7 @@ keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "fol
 categories = ["command-line-utilities"]
 
 [dependencies]
-dialoguer = "0.10.0"
+dialoguer = "0.10.1"
 console = "0.15.0"
 open = "2.1.2"
 human-panic = "1.0.3"
