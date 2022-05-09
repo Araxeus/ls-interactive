@@ -53,3 +53,16 @@ clone/download the repo
 run in project directory:
 * `cargo run`: to run in dev mode
 * `cargo build --release`: to build locally, output will be in `target\release` and named named `lsi`
+
+## Contributing
+
+Before submitting a Pull Request, verify your changes with all following commands:
+```mcfunction
+cargo check
+```
+```mcfunction
+cargo fmt --all --check
+```
+```mcfunction
+cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery
+```
