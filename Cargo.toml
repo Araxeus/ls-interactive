@@ -1,7 +1,7 @@
 [package]
 name = "ls-interactive"
 description = "Interactive ls command"
-version = "1.2.0"
+version = "1.3.0"
 authors = ["Araxeus <oaeben@gmail.com>"]
 homepage = "https://github.com/Araxeus/ls-interactive"
 license = "MIT"
@@ -12,12 +12,18 @@ keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "fol
 categories = ["command-line-utilities"]
 
 [dependencies]
-dialoguer = "0.10.0"
 console = "0.15.0"
 open = "2.1.2"
 human-panic = "1.0.3"
 lnk = "0.3.0"
+dialoguer = { version = "0.10.1", default-features = false }
 
-[[bin]]
-name = "lsi"
-path = "src/main.rs"
+[features]
+fuzz = ["dialoguer/fuzzy-select"]
+
+[patch.crates-io]
+dialoguer = { git = 'https://github.com/araxeus/dialoguer' }#path = "../../dialoguer" }
+
+# [[bin]]
+# name = "lsi"
+# path = "src/main.rs"

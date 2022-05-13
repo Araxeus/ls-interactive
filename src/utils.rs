@@ -1,13 +1,22 @@
 use crate::structs::Entry;
 
 use console::{style, Term};
-use dialoguer::{theme::ColorfulTheme, Select};
+
+use dialoguer::theme::ColorfulTheme;
+pub use dialoguer::KeyModifiers;
+
+#[cfg(not(feature = "fuzz"))]
+use dialoguer::Select;
+
+#[cfg(feature = "fuzz")]
+use dialoguer::FuzzySelect as Select;
+
 use lnk::ShellLink;
 
 use std::{fmt::Display, fs, mem, panic, process};
 
 pub fn err<S: Display>(msg: S) {
-    println!("{} {}", style("Error").red(), msg);
+    eprintln!("{} {}", style("Error").red(), msg);
 }
 
 pub fn resolve_lnk(path: &String) -> String {
@@ -35,7 +44,13 @@ pub fn resolve_lnk(path: &String) -> String {
 
 // dialoguer select from a list of choices
 // returns the index of the selected choice
-pub fn display_choices(items: &[Entry], path: &str) -> usize {
+pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
+    // let theme = ColorfulTheme {
+    //     #[cfg(feature = "fuzz")]
+    //     fuzzy_match_highlight_style: console::Style::new().for_stderr().bold().italic(),
+    //     ..ColorfulTheme::default()
+    // };
+
     match Select::with_theme(&ColorfulTheme::default())
         .with_prompt(&path[4..])
         .report(false)
@@ -45,7 +60,7 @@ pub fn display_choices(items: &[Entry], path: &str) -> usize {
         .ok()
         .unwrap()
     {
-        Some(index) => index,
+        Some(res) => res,
         // exit process if none
         None => process::exit(0),
     }
