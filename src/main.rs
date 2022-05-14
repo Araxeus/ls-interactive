@@ -1,3 +1,4 @@
+mod check_version;
 mod structs;
 mod utils;
 
@@ -10,7 +11,7 @@ use utils::{display_choices, err, resolve_lnk};
 
 fn main() {
     human_panic::setup_panic!();
-
+    check_version::run();
     let args: Vec<String> = env::args().collect();
 
     let path = if args.len() >= 2 { args[1].trim() } else { "." };
