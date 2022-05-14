@@ -17,6 +17,7 @@ console = "0.15.0"
 open = "2.1.2"
 human-panic = "1.0.3"
 lnk = "0.3.0"
+notify-rust = "4.5.8"
 
 [[bin]]
 name = "lsi"
