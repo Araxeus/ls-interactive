@@ -114,13 +114,11 @@ dependencies = [
 [[package]]
 name = "dialoguer"
 version = "0.10.1"
-source = "git+https://github.com/araxeus/dialoguer#d67c6ad653d4de07096845f32654cf58ace6407f"
+source = "git+https://github.com/araxeus/dialoguer#0c17c421d8d745c88c39e1b7652e35c848fae6a3"
 dependencies = [
  "console",
  "crossterm",
  "fuzzy-matcher",
- "lazy_static",
- "regex",
  "unicode-segmentation",
 ]
 
@@ -170,12 +168,6 @@ dependencies = [
  "toml",
  "uuid",
 ]
-
-[[package]]
-name = "lazy_static"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
