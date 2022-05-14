@@ -16,14 +16,7 @@ console = "0.15.0"
 open = "2.1.2"
 human-panic = "1.0.3"
 lnk = "0.3.0"
-dialoguer = { version = "0.10.1", default-features = false }
-
-[features]
-fuzz = ["dialoguer/fuzzy-select"]
+dialoguer = { version = "0.10.1", default-features = false, features = ["fuzzy-select"] }
 
 [patch.crates-io]
-dialoguer = { git = 'https://github.com/araxeus/dialoguer' }#path = "../../dialoguer" }
-
-# [[bin]]
-# name = "lsi"
-# path = "src/main.rs"
+dialoguer = { git = 'https://github.com/araxeus/dialoguer' }

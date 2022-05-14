@@ -5,11 +5,7 @@ use console::{style, Term};
 use dialoguer::theme::ColorfulTheme;
 pub use dialoguer::KeyModifiers;
 
-#[cfg(not(feature = "fuzz"))]
-use dialoguer::Select;
-
-#[cfg(feature = "fuzz")]
-use dialoguer::FuzzySelect as Select;
+use dialoguer::FuzzySelect;
 
 use lnk::ShellLink;
 
@@ -45,7 +41,7 @@ pub fn resolve_lnk(path: &String) -> String {
 // dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    match Select::with_theme(&ColorfulTheme::default())
+    match FuzzySelect::with_theme(&ColorfulTheme::default())
         .with_prompt(&path[4..])
         .report(false)
         .items(items)

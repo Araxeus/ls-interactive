@@ -31,12 +31,12 @@
 
 🌟 Press <kbd>Esc</kbd> to exit
 
+🌟 Type anything to filter current folder content using fuzzy search
 
 ## 🛠 Installation
 
-1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases) 
+1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
 2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7.js))
-    
 
 Installation from package managers is Coming Soon™
 
@@ -45,44 +45,48 @@ Installation from package managers is Coming Soon™
 ```bash
 lsi
 ```
+
 or
+
 ```bash
 lsi some_directory
 ```
 
 ## ⚙️ Build it yourself
+
 (Releases are [automatically](https://github.com/Araxeus/ls-interactive/blob/master/.github/workflows/release.yml) built by github actions)
 
-* install `rust`
-* clone/download the repo
+-   install `rust`
+-   clone/download the repo
 
-* run in project directory:
-  * `cargo run`: to run in dev mode
-  * `cargo build --release`: to build locally,
-    * executable will be in `/target/release` and named `ls_interactive`
-    * launch script will be in the `/scripts` directory
+-   run in project directory:
+    -   `cargo run`: to run in dev mode
+    -   `cargo build --release`: to build locally,
+        -   executable will be in `/target/release` and named `ls_interactive`
+        -   launch script will be in the `/scripts` directory
 
 ## 🤝Contributing
 
 Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/Araxeus/ls-interactive/issues).
 
 Before submitting a Pull Request, verify your changes with all following commands:
+
 ```mcfunction
 cargo check
 ```
+
 ```mcfunction
 cargo fmt --all --check
 ```
+
 ```mcfunction
 cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery
 ```
 
 ## ❤️ Show your support
 
-Give a ⭐ if this package helped you! 
-
+Give a ⭐ if this package helped you!
 
 ## 📜 License
 
 MIT. See [LICENSE file](./LICENSE) for details.
-
