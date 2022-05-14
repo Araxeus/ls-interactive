@@ -45,12 +45,6 @@ pub fn resolve_lnk(path: &String) -> String {
 // dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    // let theme = ColorfulTheme {
-    //     #[cfg(feature = "fuzz")]
-    //     fuzzy_match_highlight_style: console::Style::new().for_stderr().bold().italic(),
-    //     ..ColorfulTheme::default()
-    // };
-
     match Select::with_theme(&ColorfulTheme::default())
         .with_prompt(&path[4..])
         .report(false)
