@@ -1,12 +1,10 @@
 mod structs;
 mod utils;
 
-use std::env;
-use std::fs;
-use std::path::Path;
+use std::{env, fs, path::Path};
 
 use structs::{Entry, Filetype, Icons};
-use utils::{display_choices, err, resolve_lnk};
+use utils::{display_choices, err, resolve_lnk, KeyModifiers};
 
 fn main() {
     human_panic::setup_panic!();
@@ -25,11 +23,14 @@ fn main_loop(initial_path: String) {
     let mut path = initial_path;
     loop {
         let choices = get_choices(&path);
+
+        let (index, modifier) = display_choices(&choices, &path);
+
         // make user select a choice and get the selected Entry
-        let entry = &choices[display_choices(&choices, &path)];
+        let entry = &choices[index];
 
         // exec file
-        if entry.filetype.should_exec() {
+        if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             match open::that(&entry.path) {
                 // quit if file was opened
                 Ok(_) => break,
@@ -43,6 +44,11 @@ fn main_loop(initial_path: String) {
         } else {
             entry.path.to_string()
         };
+
+        if modifier == KeyModifiers::SHIFT {
+            print!("{}", &path[4..]);
+            break;
+        }
     }
 }
 
@@ -50,7 +56,7 @@ fn get_choices(path: &str) -> Vec<Entry> {
     let mut result_vector: Vec<Entry> = Vec::new();
 
     // .. Open parent directory
-    if let Ok(parent) = Path::new(path).parent().ok_or("No parent") {
+    if let Some(parent) = Path::new(path).parent() {
         result_vector.push(Entry {
             name: String::from(".."),
             path: parent.to_str().unwrap().to_string(),
@@ -66,13 +72,15 @@ fn get_choices(path: &str) -> Vec<Entry> {
         }
     }
 
-    // Open current directory in explorer
-    result_vector.push(Entry {
-        name: String::new(),
-        path: path.to_string(),
-        icon: &Icons::EXPLORER,
-        filetype: Filetype::Executable,
-    });
+    // Open current directory in explorer if it's empty
+    if result_vector.len() < 2 {
+        result_vector.push(Entry {
+            name: String::from("<Open>"),
+            path: path.to_string(),
+            icon: &Icons::EXPLORER,
+            filetype: Filetype::Executable,
+        });
+    }
 
     result_vector
 }

@@ -1,9 +1,7 @@
-use std::fs;
-use std::path::Path;
+use std::{fs, path::Path};
 
 #[derive(PartialEq)]
 pub enum Filetype {
-    // filetypes:
     Text, // (default)
     Executable,
     Picture,

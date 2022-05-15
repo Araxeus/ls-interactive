@@ -1,13 +1,16 @@
 use crate::structs::Entry;
 
 use console::{style, Term};
-use dialoguer::{theme::ColorfulTheme, Select};
+
+pub use dialoguer::KeyModifiers;
+use dialoguer::{theme::ColorfulTheme, FuzzySelect};
+
 use lnk::ShellLink;
 
 use std::{fmt::Display, fs, mem, panic, process};
 
 pub fn err<S: Display>(msg: S) {
-    println!("{} {}", style("Error").red(), msg);
+    eprintln!("{} {}", style("Error").red(), msg);
 }
 
 pub fn resolve_lnk(path: &String) -> String {
@@ -35,8 +38,8 @@ pub fn resolve_lnk(path: &String) -> String {
 
 // dialoguer select from a list of choices
 // returns the index of the selected choice
-pub fn display_choices(items: &[Entry], path: &str) -> usize {
-    match Select::with_theme(&ColorfulTheme::default())
+pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
+    match FuzzySelect::with_theme(&ColorfulTheme::default())
         .with_prompt(&path[4..])
         .report(false)
         .items(items)
@@ -45,7 +48,7 @@ pub fn display_choices(items: &[Entry], path: &str) -> usize {
         .ok()
         .unwrap()
     {
-        Some(index) => index,
+        Some(res) => res,
         // exit process if none
         None => process::exit(0),
     }

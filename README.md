@@ -15,54 +15,78 @@
 
 ![image](https://user-images.githubusercontent.com/78568641/167173566-8762a3a8-4dbf-492a-9883-f48760637bcd.png)
 
-## Features
+## ⚡ Features
 
-🌟 Navigate between folders using arrow keys + enter button
+🌟 Navigate between folders using arrow keys
+
+🌟 Browse folders using <kbd>Enter</kbd>
+
+🌟 Open folder in terminal (cd to folder) using <kbd>Shift</kbd> + <kbd>Enter</kbd>
+
+🌟 Open folder in file manager using <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
 
 🌟 Open files with native apps using <kbd>Enter</kbd>
 
 🌟 Top button (📁 ..) opens the parent directory
 
-🌟 Bottom button (💻) opens current directory in your native file explorer
-
 🌟 Press <kbd>Esc</kbd> to exit
 
+🌟 Type anything to filter current folder content using fuzzy search
 
-## Installation
+## 🛠 Installation
 
-Download binaries from [releases page](https://github.com/Araxeus/ls-interactive/releases) and place in PATH
+1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
+2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7.js))
 
-Installation from package managers is coming soon
+Installation from package managers is Coming Soon™
 
-## How to run it
+## 💻 How to run it
 
 ```bash
 lsi
 ```
+
 or
+
 ```bash
 lsi some_directory
 ```
 
-## Build it yourself
-(The binaries in release are [automatically](https://github.com/Araxeus/ls-interactive/blob/master/.github/workflows/release.yml) built by github actions)
+## ⚙️ Build it yourself
 
-install `rust`
-clone/download the repo
+(Releases are [automatically](https://github.com/Araxeus/ls-interactive/blob/master/.github/workflows/release.yml) built by github actions)
 
-run in project directory:
-* `cargo run`: to run in dev mode
-* `cargo build --release`: to build locally, output will be in `target\release` and named named `lsi`
+-   install `rust`
+-   clone/download the repo
 
-## Contributing
+-   run in project directory:
+    -   `cargo run`: to run in dev mode
+    -   `cargo build --release`: to build locally,
+        -   executable will be in `/target/release` and named `ls_interactive`
+        -   launch script will be in the `/scripts` directory
+
+## 🤝Contributing
+
+Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/Araxeus/ls-interactive/issues).
 
 Before submitting a Pull Request, verify your changes with all following commands:
+
 ```mcfunction
 cargo check
 ```
+
 ```mcfunction
 cargo fmt --all --check
 ```
+
 ```mcfunction
 cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery
 ```
+
+## ❤️ Show your support
+
+Give a ⭐ if this package helped you!
+
+## 📜 License
+
+MIT. See [LICENSE file](./LICENSE) for details.
