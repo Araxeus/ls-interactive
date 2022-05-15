@@ -1,7 +1,6 @@
 use super::{Filetype, Icon, Icons};
 
-use std::fmt;
-use std::fs;
+use std::{fmt, fs};
 
 pub struct Entry {
     pub name: String,

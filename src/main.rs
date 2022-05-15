@@ -1,9 +1,7 @@
 mod structs;
 mod utils;
 
-use std::env;
-use std::fs;
-use std::path::Path;
+use std::{env, fs, path::Path};
 
 use structs::{Entry, Filetype, Icons};
 use utils::{display_choices, err, resolve_lnk, KeyModifiers};

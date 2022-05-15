@@ -2,10 +2,8 @@ use crate::structs::Entry;
 
 use console::{style, Term};
 
-use dialoguer::theme::ColorfulTheme;
 pub use dialoguer::KeyModifiers;
-
-use dialoguer::FuzzySelect;
+use dialoguer::{theme::ColorfulTheme, FuzzySelect};
 
 use lnk::ShellLink;
 
