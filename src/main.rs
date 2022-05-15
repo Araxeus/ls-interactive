@@ -11,6 +11,7 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
+    // path = first arg or current dir
     let path = if args.len() >= 2 { args[1].trim() } else { "." };
 
     match fs::canonicalize(path) {
@@ -26,7 +27,6 @@ fn main_loop(initial_path: String) {
 
         let (index, modifier) = display_choices(&choices, &path);
 
-        // make user select a choice and get the selected Entry
         let entry = &choices[index];
 
         // exec file
@@ -59,7 +59,7 @@ fn get_choices(path: &str) -> Vec<Entry> {
     if let Some(parent) = Path::new(path).parent() {
         result_vector.push(Entry {
             name: String::from(".."),
-            path: parent.to_str().unwrap().to_string(),
+            path: parent.to_string_lossy().to_string(),
             icon: &Icons::DIR,
             filetype: Filetype::Directory,
         });
@@ -68,7 +68,7 @@ fn get_choices(path: &str) -> Vec<Entry> {
     // Get files in directory
     if let Ok(entries) = fs::read_dir(path) {
         for entry in entries.flatten() {
-            result_vector.push(Entry::from_dir_entry(entry));
+            result_vector.push(Entry::from_dir_entry(&entry));
         }
     }
 

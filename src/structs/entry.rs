@@ -16,21 +16,17 @@ impl fmt::Display for Entry {
 }
 
 impl Entry {
-    // pub fn to_string(self) -> String {
-    //     format!("{} {}", self.icon, self.name)
-    // }
-
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn from_dir_entry(entry: fs::DirEntry) -> Self {
+    pub fn from_dir_entry(entry: &fs::DirEntry) -> Self {
         let path = entry.path();
 
-        let native_file_type = entry.file_type().unwrap();
-
-        let filetype = Filetype::from_native(native_file_type, &path);
+        let filetype = match entry.file_type() {
+            Ok(native_file_type) => Filetype::from_native(native_file_type, &path),
+            Err(_) => Filetype::Unknown,
+        };
 
         Self {
             name: entry.file_name().to_string_lossy().to_string(),
-            path: path.to_str().unwrap().to_string(),
+            path: path.to_string_lossy().to_string(),
             icon: Icons::from_filetype(&filetype),
             filetype,
         }
