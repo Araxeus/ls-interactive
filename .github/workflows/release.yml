@@ -21,9 +21,11 @@ jobs:
           - os: macos-latest
             name: macos
             extension: tar.gz
+            tar_cmd: gnutar
           - os: ubuntu-latest
             name: linux
             extension: tar.gz
+            tar_cmd: tar
           - os: windows-latest
             name: windows
             extension: zip
@@ -49,7 +51,7 @@ jobs:
 
       - name: Tar (Unix)
         if: matrix.os != 'windows-latest'
-        run: tar  cvzf ${{ steps.filename.outputs.FILENAME }} -C scripts lsi.sh -C ../target/release ls-interactive
+        run: ${{ matrix.tar_cmd }} cvzf ${{ steps.filename.outputs.FILENAME }} -C scripts lsi.sh -C ../target/release ls-interactive
 
       - name: Zip (Windows)
         if: matrix.os == 'windows-latest'
