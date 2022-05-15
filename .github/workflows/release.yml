@@ -49,7 +49,7 @@ jobs:
 
       - name: Tar (Unix)
         if: matrix.os != 'windows-latest'
-        run: tar  --transform 's/.*\///g' -cvzf ${{ steps.filename.outputs.FILENAME }} target/release/ls-interactive scripts/lsi.sh
+        run: tar  cvzf ${{ steps.filename.outputs.FILENAME }} scripts lsi.sh -C ../target/release ls-interactive
 
       - name: Zip (Windows)
         if: matrix.os == 'windows-latest'
