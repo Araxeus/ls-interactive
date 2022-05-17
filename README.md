@@ -36,7 +36,7 @@
 ## 🛠 Installation
 
 1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
-2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7.js))
+2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
 
 Installation from package managers is Coming Soon™
 
