@@ -25,14 +25,14 @@ pub fn resolve_lnk(path: &String) -> String {
         return path.to_string();
     }
 
-    let link = link.unwrap();
-
-    let link_target = link.relative_path().as_ref().unwrap();
-    let path_to_open = fs::canonicalize(link_target);
+    let path_to_open = match link.unwrap().relative_path() {
+        Some(link_target) => fs::canonicalize(link_target).ok(),
+        None => None,
+    };
 
     match path_to_open {
-        Ok(path) => path.to_string_lossy().to_string(),
-        Err(_) => path.to_string(),
+        Some(path_to_open) => path_to_open.to_string_lossy().to_string(),
+        None => path.to_string(),
     }
 }
 
@@ -45,7 +45,6 @@ pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
         .items(items)
         .default(0)
         .interact_on_opt(&Term::stderr())
-        .ok()
         .unwrap()
     {
         Some(res) => res,
