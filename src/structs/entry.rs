@@ -17,9 +17,9 @@ impl fmt::Display for Entry {
             console::Emoji(
                 self.icon.to_str(),
                 if self.filetype == Filetype::Directory {
-                    ">"
+                    "\\"
                 } else {
-                    "-"
+                    " "
                 }
             ),
             self.name
