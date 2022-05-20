@@ -177,9 +177,9 @@ checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
 
 [[package]]
 name = "lnk"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5afc3411d4a446db17a7fe5ac533219236067c26de38903f88c308f8200322b2"
+checksum = "74c22ceaeab0d65bc44bb98e3fd15bdf7b77ad5035c72a9d30edc9c4425da0bb"
 dependencies = [
  "bitflags",
  "byteorder",
