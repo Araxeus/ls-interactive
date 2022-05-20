@@ -114,7 +114,7 @@ dependencies = [
 [[package]]
 name = "dialoguer"
 version = "0.10.1"
-source = "git+https://github.com/araxeus/dialoguer#23b9ca936ca11d0b03d16805f8ec84d9b6e78c50"
+source = "git+https://github.com/araxeus/dialoguer#d8633df7b72390c76166e1a8f8b90a339b9e4811"
 dependencies = [
  "console",
  "crossterm",
