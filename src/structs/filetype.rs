@@ -37,6 +37,7 @@ impl Filetype {
             Self::from_ext(
                 path.extension()
                     .unwrap_or_default()
+                    .to_ascii_lowercase()
                     .to_str()
                     .unwrap_or_default(),
             )
