@@ -45,7 +45,7 @@ fn main_loop(initial_path: String) {
             entry.path.to_string()
         };
 
-        if modifier == KeyModifiers::SHIFT {
+        if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
             print!("{}", pretty_path(&path));
             break;
         }
