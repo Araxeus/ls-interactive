@@ -11,19 +11,7 @@ pub struct Entry {
 
 impl fmt::Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            console::Emoji(
-                self.icon.to_str(),
-                if self.filetype == Filetype::Directory {
-                    "\\"
-                } else {
-                    " "
-                }
-            ),
-            self.name
-        )
+        write!(f, "{} {}", self.icon, self.name)
     }
 }
 

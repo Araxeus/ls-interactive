@@ -4,12 +4,6 @@ use std::fmt;
 
 pub struct Icon(&'static str);
 
-impl Icon {
-    pub const fn to_str(&self) -> &'static str {
-        self.0
-    }
-}
-
 impl fmt::Display for Icon {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
