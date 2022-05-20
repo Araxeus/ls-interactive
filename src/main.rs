@@ -35,7 +35,10 @@ fn main_loop(initial_path: String) {
                 // quit if file was opened
                 Ok(_) => break,
                 // else display error and open as directory
-                Err(_) => err(format!("Failed to open file \"{}\"", pretty_path(&entry.path))),
+                Err(_) => err(format!(
+                    "Failed to open file \"{}\"",
+                    pretty_path(&entry.path)
+                )),
             }
         }
         // browse directory by continuing loop with new path
