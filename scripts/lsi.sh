@@ -1,4 +1,8 @@
-#!/bin/bash
+#add the following function to /home/user/.bashrc
 
-output=$("$(dirname "$0")/ls-interactive")
-[ -n "$output" ] && cd "$(output)"
+lsi() {
+  local output
+  if output=$(ls-interactive "$@") && [[ $output ]] ; then
+    cd "$output"
+  fi
+}

@@ -4,7 +4,7 @@ mod utils;
 use std::{env, fs, path::Path};
 
 use structs::{Entry, Filetype, Icons};
-use utils::{display_choices, err, resolve_lnk, KeyModifiers};
+use utils::{display_choices, err, pretty_path, resolve_lnk, KeyModifiers};
 
 fn main() {
     human_panic::setup_panic!();
@@ -35,7 +35,10 @@ fn main_loop(initial_path: String) {
                 // quit if file was opened
                 Ok(_) => break,
                 // else display error and open as directory
-                Err(_) => err(format!("Failed to open file \"{}\"", &entry.path[4..])),
+                Err(_) => err(format!(
+                    "Failed to open file \"{}\"",
+                    pretty_path(&entry.path)
+                )),
             }
         }
         // browse directory by continuing loop with new path
@@ -45,8 +48,8 @@ fn main_loop(initial_path: String) {
             entry.path.to_string()
         };
 
-        if modifier == KeyModifiers::SHIFT {
-            print!("{}", &path[4..]);
+        if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
+            print!("{}", pretty_path(&path));
             break;
         }
     }

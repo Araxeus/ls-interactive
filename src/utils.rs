@@ -21,7 +21,7 @@ pub fn resolve_lnk(path: &String) -> String {
     mem::drop(panic::take_hook());
 
     if link.is_err() {
-        err(format!("Failed to read shortcut \"{}\"", &path[4..]));
+        err(format!("Failed to read shortcut \"{}\"", pretty_path(path)));
         return path.to_string();
     }
 
@@ -40,7 +40,7 @@ pub fn resolve_lnk(path: &String) -> String {
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
     match FuzzySelect::with_theme(&ColorfulTheme::default())
-        .with_prompt(&path[4..])
+        .with_prompt(pretty_path(path))
         .report(false)
         .items(items)
         .default(0)
@@ -50,5 +50,13 @@ pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
         Some(res) => res,
         // exit process if none
         None => process::exit(0),
+    }
+}
+
+pub fn pretty_path(path: &str) -> &str {
+    if cfg!(windows) {
+        &path[4..]
+    } else {
+        path
     }
 }

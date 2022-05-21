@@ -21,7 +21,7 @@
 
 🌟 Browse folders using <kbd>Enter</kbd>
 
-🌟 Open folder in terminal (cd to folder) using <kbd>Shift</kbd> + <kbd>Enter</kbd>
+🌟 Open folder in terminal (cd to folder) using [<kbd>Shift</kbd> + <kbd>Enter</kbd>] or [<kbd>Alt</kbd> + <kbd>Enter</kbd>]
 
 🌟 Open folder in file manager using <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
 
@@ -33,12 +33,19 @@
 
 🌟 Type anything to filter current folder content using fuzzy search
 
+> on Linux/Mac <kbd>Shift</kbd> + <kbd>Enter</kbd> or <kbd>Ctrl</kbd> + <kbd>Enter</kbd> might not work
+>
+> see https://github.com/crossterm-rs/crossterm/issues/669
+
 ## 🛠 Installation
 
 1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
 2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
 
-Installation from package managers is Coming Soon™
+#### Linux/Mac
+Copy the function in [lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into to `/home/user/.bashrc`
+
+(You need only the ls-interactive file in your PATH, since lsi is defined in your bash startup file)
 
 ## 💻 How to run it
 
