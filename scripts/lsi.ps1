@@ -5,10 +5,10 @@
 
 # which will open either:
 
-# New Powershell:
+# pwsh (New Powershell):
 # C:\Users\MyUser\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
 
-# Old Powershell
+# powershell (Old Powershell):
 # C:\Users\MyUser\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
 
 
