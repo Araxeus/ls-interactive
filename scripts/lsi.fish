@@ -5,7 +5,7 @@
 # to have it accessible at all times.
 
 function lsi
-    set -l output (ls-interactive $argv)
+    set -l output (ls-interactive "$argv")
     if test $status -eq 0
         and test -n "$output"
         cd $output
