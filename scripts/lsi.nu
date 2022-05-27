@@ -1,5 +1,7 @@
 # add the following function to env.nu
-# you can open it via the following command in nushell:
+# you can edit your config using one of the following commands:
+
+# gedit $nu.env-path
 # notepad $nu.env-path
 
 def-env lsi [...path: string] {
