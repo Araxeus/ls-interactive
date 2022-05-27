@@ -7,10 +7,10 @@ use dialoguer::{theme::ColorfulTheme, FuzzySelect};
 
 use lnk::ShellLink;
 
-use std::{fmt::Display, fs, mem, panic, process};
+use std::{env, fmt::Display, fs, mem, panic, process};
 
 pub fn err<S: Display>(msg: S) {
-    eprintln!("{} {}", style("Error").red(), msg);
+    eprintln!("{} {}", style("Error:").red().for_stderr(), msg);
 }
 
 pub fn resolve_lnk(path: &String) -> String {
@@ -51,6 +51,17 @@ pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
         // exit process if none
         None => process::exit(0),
     }
+}
+
+pub fn get_first_arg() -> Option<String> {
+    env::args().nth(1).and_then(|arg| {
+        let arg = arg.trim();
+        if arg.is_empty() {
+            None
+        } else {
+            Some(arg.to_owned())
+        }
+    })
 }
 
 pub fn pretty_path(path: &str) -> &str {
