@@ -1,18 +1,19 @@
 mod structs;
 mod utils;
 
-use std::{env, fs, path::Path};
+use std::{fs, path::Path};
 
 use structs::{Entry, Filetype, Icons};
-use utils::{display_choices, err, pretty_path, resolve_lnk, KeyModifiers};
+use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
 fn main() {
     human_panic::setup_panic!();
 
-    let args: Vec<String> = env::args().collect();
-
     // path = first arg or current dir
-    let path = if args.len() >= 2 { args[1].trim() } else { "." };
+    let path = match get_first_arg() {
+        Some(path) => path,
+        None => String::from("."),
+    };
 
     match fs::canonicalize(path) {
         Ok(path) => main_loop(path.to_string_lossy().to_string()),
