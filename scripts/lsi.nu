@@ -7,7 +7,7 @@
 def-env lsi [...path: string] {
     let output = (ls-interactive ($path | str collect ' '))
     cd (
-        if ($output | empty?) { $env.PWD } 
+        if ($output | is-empty) { $env.PWD } 
         else { $output }
     )
 }
