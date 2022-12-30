@@ -32,7 +32,7 @@ impl Icons {
     pub const CSS: Icon = Icon("💄"); // 💅
 
     // TODO
-    // Packages: 📦 (cargo.toml, package.json, etc)
+    // Packages: 📦 (zip, tar, gz, bz2, xz, 7z, rar)
     // Typescript: 📘
     // Python:🐍
     // C#: #️⃣
