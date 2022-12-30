@@ -1,9 +1,8 @@
-use crate::structs::Entry;
+use crate::structs::{ColorfulTheme, Entry, Prompt};
 
-use console::{style, Term};
+use console::style;
 
-pub use dialoguer::KeyModifiers;
-use dialoguer::{theme::ColorfulTheme, FuzzySelect};
+pub use crossterm::event::KeyModifiers;
 
 use lnk::ShellLink;
 
@@ -40,12 +39,10 @@ pub fn resolve_lnk(path: &String) -> String {
 // dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    FuzzySelect::with_theme(&ColorfulTheme::default())
-        .with_prompt(pretty_path(path))
-        .report(false)
+    Prompt::with_theme(&ColorfulTheme::default())
+        .title(pretty_path(path))
         .items(items)
-        .default(0)
-        .interact_on_opt(&Term::stderr())
+        .run()
         .unwrap()
         .map_or_else(|| process::exit(0), |res| res)
 }
