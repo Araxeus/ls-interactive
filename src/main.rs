@@ -10,15 +10,12 @@ fn main() {
     human_panic::setup_panic!();
 
     // path = first arg or current dir
-    let path = match get_first_arg() {
-        Some(path) => path,
-        None => String::from("."),
-    };
+    let path = get_first_arg().map_or_else(|| String::from("."), |path| path);
 
-    match fs::canonicalize(path) {
-        Ok(path) => main_loop(path.to_string_lossy().to_string()),
-        Err(_) => err("Invalid path"),
-    }
+    fs::canonicalize(path).map_or_else(
+        |_| err("Invalid Path"),
+        |path| main_loop(path.to_string_lossy().to_string()),
+    );
 }
 
 fn main_loop(initial_path: String) {
