@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum Filetype {
     Text, // (default)
     Executable,

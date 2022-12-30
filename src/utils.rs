@@ -10,7 +10,7 @@ use lnk::ShellLink;
 use std::{env, fmt::Display, fs, mem, panic, process};
 
 pub fn err<S: Display>(msg: S) {
-    eprintln!("{} {}", style("Error:").red().for_stderr(), msg);
+    eprintln!("{} {msg}", style("Error:").red().for_stderr());
 }
 
 pub fn resolve_lnk(path: &String) -> String {
@@ -25,32 +25,29 @@ pub fn resolve_lnk(path: &String) -> String {
         return path.to_string();
     }
 
-    let path_to_open = match link.unwrap().relative_path() {
-        Some(link_target) => fs::canonicalize(link_target).ok(),
-        None => None,
-    };
+    let path_to_open = link
+        .unwrap()
+        .relative_path()
+        .as_ref()
+        .and_then(|link_target| fs::canonicalize(link_target).ok());
 
-    match path_to_open {
-        Some(path_to_open) => path_to_open.to_string_lossy().to_string(),
-        None => path.to_string(),
-    }
+    path_to_open.map_or_else(
+        || path.to_string(),
+        |path_to_open| path_to_open.to_string_lossy().to_string(),
+    )
 }
 
 // dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    match FuzzySelect::with_theme(&ColorfulTheme::default())
+    FuzzySelect::with_theme(&ColorfulTheme::default())
         .with_prompt(pretty_path(path))
         .report(false)
         .items(items)
         .default(0)
         .interact_on_opt(&Term::stderr())
         .unwrap()
-    {
-        Some(res) => res,
-        // exit process if none
-        None => process::exit(0),
-    }
+        .map_or_else(|| process::exit(0), |res| res)
 }
 
 pub fn get_first_arg() -> Option<String> {
