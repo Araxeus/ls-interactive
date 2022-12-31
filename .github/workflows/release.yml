@@ -16,14 +16,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        rust: [stable]
         include:
           - os: macos-latest
-            filename: macos
+            name: macos
+            extension: tar.gz
+            tar_cmd: gtar
           - os: ubuntu-latest
-            filename: linux
+            name: linux
+            extension: tar.gz
+            tar_cmd: tar
           - os: windows-latest
-            filename: windows
+            name: windows
+            extension: zip
 
     steps:
       - uses: actions/checkout@v3
@@ -34,28 +38,26 @@ jobs:
           toolchain: stable
           override: true
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build
         run: cargo build --release --verbose
 
-      - name: Release (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: target/release/lsi.exe
-
-      - name: Get tar name (Unix)
-        if: matrix.os != 'windows-latest'
-        id: tar_name
-        run: echo ::set-output name=NAME::"lsi_${GITHUB_REF#refs/tags/}_${{ matrix.filename }}.tar.gz"
+      - name: Get filename
+        id: filename
+        shell: sh
+        run: echo ::set-output name=FILENAME::"lsi_${GITHUB_REF#refs/tags/}_${{ matrix.name }}.${{ matrix.extension }}"
 
       - name: Tar (Unix)
         if: matrix.os != 'windows-latest'
-        run: tar cvzf ${{ steps.tar_name.outputs.NAME }} "target/release/lsi"
+        run: ${{ matrix.tar_cmd }} cvzf ${{ steps.filename.outputs.FILENAME }} -C scripts lsi.sh -C ../target/release ls-interactive
 
-      - name: Release (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Zip (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: Compress-Archive -Path target/release/ls-interactive.exe, scripts/lsi.bat ${{ steps.filename.outputs.FILENAME }} -Force
+
+      - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ steps.tar_name.outputs.NAME }}
+          files: ${{ steps.filename.outputs.FILENAME }}

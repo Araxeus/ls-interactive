@@ -1,9 +1,7 @@
-use std::fs;
-use std::path::Path;
+use std::{fs, path::Path};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum Filetype {
-    // filetypes:
     Text, // (default)
     Executable,
     Picture,
@@ -39,6 +37,7 @@ impl Filetype {
             Self::from_ext(
                 path.extension()
                     .unwrap_or_default()
+                    .to_ascii_lowercase()
                     .to_str()
                     .unwrap_or_default(),
             )
