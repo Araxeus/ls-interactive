@@ -7,7 +7,7 @@ homepage = "https://github.com/Araxeus/ls-interactive"
 license = "MIT"
 edition = "2021"
 readme = "README.md"
-repository = "https://github.com/you/ls-interactive"
+repository = "https://github.com/Araxeus/ls-interactive"
 keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "folders", "directory"]
 categories = ["command-line-utilities"]
 
@@ -19,3 +19,4 @@ lnk = "0.4.1"
 fuzzy-matcher = "0.3.7"
 crossterm = "0.24.0"
 unicode-segmentation = "1.9.0"
+tiny_update_notifier = "1.1.0"
