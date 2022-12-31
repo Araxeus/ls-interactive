@@ -1,4 +1,3 @@
-mod check_version;
 mod structs;
 mod utils;
 
@@ -7,9 +6,16 @@ use std::{fs, path::Path};
 use structs::{Entry, Filetype, Icons};
 use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
+use tiny_update_notifier::run_notifier;
+
 fn main() {
     human_panic::setup_panic!();
-    check_version::run();
+
+    run_notifier(
+        env!("CARGO_PKG_VERSION"),
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_REPOSITORY"),
+    );
 
     // path = first arg or current dir
     let path = get_first_arg().map_or_else(|| String::from("."), |path| path);
