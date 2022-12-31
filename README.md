@@ -17,23 +17,21 @@
 
 ## ⚡ Features
 
-🌟 Navigate between folders using arrow keys
+🌟 Navigate between folders/files using arrow keys
 
-🌟 Browse folders using <kbd>Enter</kbd>
+🌟 Browse folders / Open files with native apps using using <kbd>Enter</kbd>
 
-🌟 Open folder in terminal (cd to folder) using [<kbd>Shift</kbd> + <kbd>Enter</kbd>] or [<kbd>Alt</kbd> + <kbd>Enter</kbd>]
+🌟 Open folder in terminal (CD to folder) using <kbd>Shift</kbd>+<kbd>Enter</kbd> or <kbd>Alt</kbd>+<kbd>Enter</kbd>
 
-🌟 Open folder in file manager using <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
-
-🌟 Open files with native apps using <kbd>Enter</kbd>
-
-🌟 Top button (📁 ..) opens the parent directory
-
-🌟 Press <kbd>Esc</kbd> to exit
+🌟 Open folder in file manager using <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
 
 🌟 Type anything to filter current folder content using fuzzy search
 
-> on Linux/Mac <kbd>Shift</kbd> + <kbd>Enter</kbd> or <kbd>Ctrl</kbd> + <kbd>Enter</kbd> might not work
+🌟 Top button (📁 ..) opens the parent directory (<kbd>LeftArrow</kbd> can also be used when fuzzy text field is empty)
+
+🌟 Press <kbd>Esc</kbd> to exit
+
+> on Linux/Mac <kbd>Shift</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> *might* not work
 >
 > see https://github.com/crossterm-rs/crossterm/issues/669
 
@@ -123,7 +121,7 @@ lsi
 or
 
 ```bash
-lsi some_directory
+lsi some_relative_path
 ```
 
 ## ⚙️ Build it yourself
