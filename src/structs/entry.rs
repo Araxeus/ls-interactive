@@ -19,10 +19,11 @@ impl Entry {
     pub fn from_dir_entry(entry: &fs::DirEntry) -> Self {
         let path = entry.path();
 
-        let filetype = match entry.file_type() {
-            Ok(native_file_type) => Filetype::from_native(native_file_type, &path),
-            Err(_) => Filetype::Unknown,
-        };
+        let filetype = entry
+            .file_type()
+            .map_or(Filetype::Unknown, |native_file_type| {
+                Filetype::from_native(native_file_type, &path)
+            });
 
         Self {
             name: entry.file_name().to_string_lossy().to_string(),

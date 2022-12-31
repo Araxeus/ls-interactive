@@ -16,7 +16,6 @@ console = "=0.15.0" # ANY LATER VERSION BREAKS SCROLLING (0.15.1 - 0.15.3 tested
 open = "3.2.0"
 human-panic = "1.0.3"
 lnk = "0.4.1"
-dialoguer = { version = "0.10.1", default-features = false, features = ["fuzzy-select"] }
-
-[patch.crates-io]
-dialoguer = { git = 'https://github.com/araxeus/dialoguer' }
+fuzzy-matcher = "0.3.7"
+crossterm = "0.24.0"
+unicode-segmentation = "1.9.0"
