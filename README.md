@@ -40,12 +40,79 @@
 ## 🛠 Installation
 
 1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
-2. extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
+   
+2. Extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
+   
+3. Follow shell specific instructions:
+<details>
+  <summary><bold>Bash (Linux/Mac)</bold></summary>
 
-#### Linux/Mac
-Copy the function in [lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into to `/home/user/.bashrc`
+  * Copy the `lsi` function from [scripts/lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into to `/home/user/.bashrc`
 
-(You need only the ls-interactive file in your PATH, since lsi is defined in your bash startup file)
+    ```bash
+    gedit /home/user/.bashrc
+    ```
+ 
+</details>
+
+<details>
+  <summary><bold>Batch (Windows)</bold></summary>
+
+  * Copy [scripts/lsi.bat](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into a folder in your `%PATH%` environment variable
+
+    you can open you envionment variables settings using the following command:
+
+    ```batch
+    rundll32.exe sysdm.cpl,EditEnvironmentVariables
+    ```
+ 
+</details>
+
+<details>
+  <summary><bold>Fish Shell</bold></summary>
+
+  * Copy [scripts/lsi.fish](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.fish) into `~/.config/fish/functions/`
+   
+    (Windows WSL is currently unsupported)
+
+  
+ 
+</details>
+<details>
+  <summary><bold>Powershell</bold></summary>
+
+  * Copy the `lsi` function from [scripts/lsi.ps1](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
+
+    you can open your profile using one of the following commands:
+
+    ```ps1
+    notepad $profile
+    ```
+    <br>
+   
+    ```ps1
+    gedit $profile
+    ```
+ 
+</details>
+
+<details>
+  <summary><bold>Nushell</bold></summary>
+
+  * Copy the `lsi` function from [scripts/lsi.nu](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.nu) to your `env.nu`
+
+    you can open your profile using one of the following commands:
+
+    ```bash
+    notepad $nu.env-path
+    ```
+    <br>
+   
+    ```bash
+    gedit $nu.env-path
+    ```
+ 
+</details>
 
 ## 💻 How to run it
 
