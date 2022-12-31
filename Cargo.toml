@@ -12,7 +12,7 @@ keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "fol
 categories = ["command-line-utilities"]
 
 [dependencies]
-console = "0.15.3"
+console = "=0.15.0" # ANY LATER VERSION BREAKS SCROLLING (0.15.1 - 0.15.3 tested)
 open = "3.2.0"
 human-panic = "1.0.3"
 lnk = "0.4.1"
