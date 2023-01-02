@@ -60,8 +60,55 @@ pub fn get_first_arg() -> Option<String> {
 
 pub fn pretty_path(path: &str) -> &str {
     if cfg!(windows) {
-        &path[4..]
+        path.trim_start_matches("\\\\?\\")
     } else {
         path
     }
+}
+
+/**** WINDOWS ONLY ****/
+
+#[cfg(windows)]
+use std::io::Error;
+#[cfg(windows)]
+use windows::Win32::{
+    Storage::FileSystem::GetLogicalDrives,
+    System::SystemInformation::{ComputerNameNetBIOS, GetComputerNameExW},
+};
+
+#[cfg(windows)]
+pub fn get_logical_drives() -> Result<Vec<char>, Error> {
+    let bitmask = unsafe { GetLogicalDrives() };
+    if bitmask == 0 {
+        Err(Error::last_os_error())
+    } else {
+        let mut mask = 1;
+        let mut result: Vec<char> = vec![];
+
+        for index in 1..26 {
+            if mask & bitmask == mask {
+                let char = std::char::from_u32(index + 64);
+                result.push(char.unwrap());
+            }
+            mask <<= 1;
+        }
+
+        Ok(result)
+    }
+}
+
+#[cfg(windows)]
+pub fn get_pc_name() -> std::string::String {
+    let mut buffer = [0u16; 256];
+    #[allow(clippy::cast_possible_truncation)]
+    let mut size = buffer.len() as u32;
+    unsafe {
+        GetComputerNameExW(
+            ComputerNameNetBIOS,
+            windows::core::PWSTR(buffer.as_mut_ptr()),
+            &mut size,
+        );
+    }
+    let name = String::from_utf16_lossy(&buffer);
+    format!("{name}:\\\\")
 }

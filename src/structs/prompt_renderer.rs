@@ -240,6 +240,9 @@ impl Theme for ColorfulTheme {
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(text, search_term) {
                 for (idx, c) in text.chars().into_iter().enumerate() {
+                    if text.starts_with('\u{1f5a5}') && c == ' ' && active {
+                        continue;
+                    }; // fix `🖥️ ..` is printed as `🖥️  ..`
                     if indices.contains(&idx) && !is_rtl(c) {
                         if active {
                             write!(
@@ -251,7 +254,8 @@ impl Theme for ColorfulTheme {
                         } else {
                             write!(f, "{}", self.fuzzy_match_highlight_style.apply_to(c))?;
                         }
-                    } else if active {
+                    } else if active && c != '\u{1f5a5}' && c != '\u{fe0f}' {
+                        // pc emoji
                         write!(f, "{}", self.active_item_style.apply_to(c))?;
                     } else {
                         write!(f, "{c}")?;

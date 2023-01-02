@@ -4,6 +4,12 @@ use std::fmt;
 
 pub struct Icon(&'static str);
 
+impl Icon {
+    pub const fn str(&self) -> &'static str {
+        self.0
+    }
+}
+
 impl fmt::Display for Icon {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -14,7 +20,7 @@ impl fmt::Display for Icon {
 pub struct Icons;
 
 impl Icons {
-    pub const EXE: Icon = Icon("💿"); // 💽 📀 💾
+    pub const EXE: Icon = Icon("💿"); //  📀 💾
     pub const TXT: Icon = Icon("📄"); // 📰 📝 📖 📜 📒 📓 📑 🧾 📋 📇
     pub const PIC: Icon = Icon("🖼️"); // 📷 📸 🎨
     pub const VID: Icon = Icon("🎬"); // 🎞️ 📺 📹 📽️ 🎥 📼
@@ -30,6 +36,10 @@ impl Icons {
     pub const RUST: Icon = Icon("🦀"); // 🦞
     pub const JS: Icon = Icon("📒"); // 🇯 🐍 "\x1b[30;43m🇯\x1b[0m" = black on yellow
     pub const CSS: Icon = Icon("💄"); // 💅
+
+    // Windows Only
+    pub const PC: Icon = Icon("🖥️");
+    pub const DRIVE: Icon = Icon("💽");
 
     // TODO
     // Packages: 📦 (zip, tar, gz, bz2, xz, 7z, rar)
@@ -61,6 +71,7 @@ impl Icons {
             Filetype::Rust => &Self::RUST,
             Filetype::Javascript => &Self::JS,
             Filetype::Css => &Self::CSS,
+            Filetype::DriveView => &Self::PC,
             Filetype::Unknown => &Self::UNKNOWN,
         }
     }
