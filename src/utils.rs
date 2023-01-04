@@ -36,7 +36,6 @@ pub fn resolve_lnk(path: &String) -> String {
     )
 }
 
-// dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
     Prompt::with_theme(&ColorfulTheme::default())
@@ -71,43 +70,39 @@ pub fn pretty_path(path: &str) -> &str {
 #[cfg(windows)]
 use std::io::Error;
 #[cfg(windows)]
-use windows::Win32::{
-    Storage::FileSystem::GetLogicalDrives,
-    System::SystemInformation::{ComputerNameNetBIOS, GetComputerNameExW},
+use windows::{
+    core::PWSTR,
+    Win32::{
+        Storage::FileSystem::GetLogicalDrives,
+        System::SystemInformation::{ComputerNameNetBIOS, GetComputerNameExW},
+    },
 };
 
 #[cfg(windows)]
 pub fn get_logical_drives() -> Result<Vec<char>, Error> {
     let bitmask = unsafe { GetLogicalDrives() };
     if bitmask == 0 {
-        Err(Error::last_os_error())
-    } else {
-        let mut mask = 1;
-        let mut result: Vec<char> = vec![];
-
-        for index in 1..26 {
-            if mask & bitmask == mask {
-                let char = std::char::from_u32(index + 64);
-                result.push(char.unwrap());
-            }
-            mask <<= 1;
-        }
-
-        Ok(result)
+        return Err(Error::last_os_error());
     }
+    let mut result: Vec<char> = vec![];
+    let mut mask = 1;
+    for index in 1..26 {
+        if mask & bitmask == mask {
+            let char = char::from_u32(index + 64);
+            result.push(char.unwrap());
+        }
+        mask <<= 1;
+    }
+    Ok(result)
 }
 
 #[cfg(windows)]
-pub fn get_pc_name() -> std::string::String {
+pub fn get_pc_name() -> String {
     let mut buffer = [0u16; 256];
     #[allow(clippy::cast_possible_truncation)]
     let mut size = buffer.len() as u32;
     unsafe {
-        GetComputerNameExW(
-            ComputerNameNetBIOS,
-            windows::core::PWSTR(buffer.as_mut_ptr()),
-            &mut size,
-        );
+        GetComputerNameExW(ComputerNameNetBIOS, PWSTR(buffer.as_mut_ptr()), &mut size);
     }
     let name = String::from_utf16_lossy(&buffer);
     format!("{name}:\\\\")
