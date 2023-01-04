@@ -54,16 +54,17 @@ fn main_loop(initial_path: String) {
                 )),
             }
         }
-        // browse directory by continuing loop with new path
-        if entry.filetype == Filetype::Lnk {
-            selected_entry.path = resolve_lnk(&entry.path);
-        }
-
-        selected_entry = entry;
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
             print!("{}", pretty_path(&selected_entry.path));
             break;
+        }
+
+        // browse directory by continuing loop with new path
+        selected_entry = entry;
+
+        if selected_entry.filetype == Filetype::Lnk {
+            selected_entry.path = resolve_lnk(&selected_entry.path);
         }
     }
 }
