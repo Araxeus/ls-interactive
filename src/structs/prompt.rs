@@ -131,7 +131,10 @@ impl Prompt<'_> {
 
             terminal::enable_raw_mode()?;
 
-            if let Event::Key(KeyEvent { code, modifiers }) = read().unwrap() {
+            if let Event::Key(KeyEvent {
+                code, modifiers, ..
+            }) = read().unwrap()
+            {
                 match code {
                     KeyCode::Esc if allow_quit => {
                         if self.clear {
