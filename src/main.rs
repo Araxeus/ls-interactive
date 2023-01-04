@@ -6,12 +6,12 @@ use std::{fs, path::Path};
 use structs::{Entry, Filetype, Icons};
 use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
-use tiny_update_notifier::run_notifier;
+use tiny_update_notifier::check_github;
 
 fn main() {
     human_panic::setup_panic!();
 
-    run_notifier(
+    check_github(
         env!("CARGO_PKG_VERSION"),
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_REPOSITORY"),
