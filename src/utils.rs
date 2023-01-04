@@ -84,16 +84,8 @@ pub fn get_logical_drives() -> Result<Vec<char>, Error> {
     if bitmask == 0 {
         return Err(Error::last_os_error());
     }
-    let mut result: Vec<char> = vec![];
-    let mut mask = 1;
-    for index in 1..26 {
-        if mask & bitmask == mask {
-            let char = char::from_u32(index + 64);
-            result.push(char.unwrap());
-        }
-        mask <<= 1;
-    }
-    Ok(result)
+
+    Ok(bitmask_to_vec(bitmask))
 }
 
 #[cfg(windows)]
@@ -106,4 +98,15 @@ pub fn get_pc_name() -> String {
     }
     let name = String::from_utf16_lossy(&buffer);
     format!("{name}:\\\\")
+}
+
+#[cfg(windows)]
+fn bitmask_to_vec(bitmask: u32) -> Vec<char> {
+    let mut vec = Vec::new();
+    for i in 0..32 {
+        if bitmask & (1 << i) != 0 {
+            vec.push((b'A' + i) as char);
+        }
+    }
+    vec
 }
