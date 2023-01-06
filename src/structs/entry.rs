@@ -2,11 +2,23 @@ use super::{Filetype, Icon, Icons};
 
 use std::{fmt, fs};
 
+#[derive(Clone)]
 pub struct Entry {
     pub name: String,
     pub path: String,
     pub icon: &'static Icon,
     pub filetype: Filetype,
+}
+
+impl Default for Entry {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            path: String::new(),
+            icon: Icons::from_filetype(&Filetype::Unknown),
+            filetype: Filetype::Unknown,
+        }
+    }
 }
 
 impl fmt::Display for Entry {

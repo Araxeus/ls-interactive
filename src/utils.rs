@@ -36,7 +36,6 @@ pub fn resolve_lnk(path: &String) -> String {
     )
 }
 
-// dialoguer select from a list of choices
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
     Prompt::with_theme(&ColorfulTheme::default())
@@ -60,8 +59,36 @@ pub fn get_first_arg() -> Option<String> {
 
 pub fn pretty_path(path: &str) -> &str {
     if cfg!(windows) {
-        &path[4..]
+        path.trim_start_matches("\\\\?\\")
     } else {
         path
     }
+}
+
+/**** WINDOWS ONLY ****/
+
+#[cfg(windows)]
+use std::io::Error;
+#[cfg(windows)]
+use windows::Win32::Storage::FileSystem::GetLogicalDrives;
+
+#[cfg(windows)]
+pub fn get_logical_drives() -> Result<Vec<char>, Error> {
+    let bitmask = unsafe { GetLogicalDrives() };
+    if bitmask == 0 {
+        return Err(Error::last_os_error());
+    }
+
+    Ok(bitmask_to_vec(bitmask))
+}
+
+#[cfg(windows)]
+fn bitmask_to_vec(bitmask: u32) -> Vec<char> {
+    let mut vec = Vec::new();
+    for i in 0..32 {
+        if bitmask & (1 << i) != 0 {
+            vec.push((b'A' + i) as char);
+        }
+    }
+    vec
 }

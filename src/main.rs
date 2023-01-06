@@ -6,6 +6,9 @@ use std::{fs, path::Path};
 use structs::{Entry, Filetype, Icons};
 use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
+#[cfg(windows)]
+use utils::get_logical_drives;
+
 use tiny_update_notifier::check_github;
 
 fn main() {
@@ -27,13 +30,17 @@ fn main() {
 }
 
 fn main_loop(initial_path: String) {
-    let mut path = initial_path;
+    let mut selected_entry = Entry {
+        path: initial_path,
+        ..Default::default()
+    };
+
     loop {
-        let choices = get_choices(&path);
+        let choices = get_choices(&selected_entry);
 
-        let (index, modifier) = display_choices(&choices, &path);
+        let (index, modifier) = display_choices(&choices, &selected_entry.path);
 
-        let entry = &choices[index];
+        let entry = choices[index].clone();
 
         // exec file
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
@@ -47,25 +54,45 @@ fn main_loop(initial_path: String) {
                 )),
             }
         }
-        // browse directory by continuing loop with new path
-        path = if entry.filetype == Filetype::Lnk {
-            resolve_lnk(&entry.path)
-        } else {
-            entry.path.to_string()
-        };
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
-            print!("{}", pretty_path(&path));
+            print!("{}", pretty_path(&selected_entry.path));
             break;
+        }
+
+        // browse directory by continuing loop with new path
+        selected_entry = entry;
+
+        if selected_entry.filetype == Filetype::Lnk {
+            selected_entry.path = resolve_lnk(&selected_entry.path);
         }
     }
 }
 
-fn get_choices(path: &str) -> Vec<Entry> {
+fn get_choices(entry: &Entry) -> Vec<Entry> {
     let mut result_vector: Vec<Entry> = Vec::new();
 
+    #[cfg(windows)]
+    // Open Drives View on Windows
+    if entry.filetype == Filetype::DriveView {
+        match get_logical_drives() {
+            Ok(drives) => {
+                for drive in drives {
+                    result_vector.push(Entry {
+                        name: format!("{drive}:\\"),
+                        path: format!("{drive}:\\"),
+                        icon: &Icons::DRIVE,
+                        filetype: Filetype::Directory,
+                    });
+                }
+                return result_vector;
+            }
+            Err(_) => err("Failed to get drives"),
+        }
+    }
+
     // .. Open parent directory
-    if let Some(parent) = Path::new(path).parent() {
+    if let Some(parent) = Path::new(&entry.path).parent() {
         result_vector.push(Entry {
             name: String::from(".."),
             path: parent.to_string_lossy().to_string(),
@@ -74,8 +101,19 @@ fn get_choices(path: &str) -> Vec<Entry> {
         });
     }
 
+    #[cfg(windows)]
+    if result_vector.is_empty() {
+        // .. Open Drives View on Windows
+        result_vector.push(Entry {
+            name: String::from(".."),
+            path: env!("COMPUTERNAME").to_string(),
+            icon: &Icons::PC,
+            filetype: Filetype::DriveView,
+        });
+    }
+
     // Get files in directory
-    if let Ok(entries) = fs::read_dir(path) {
+    if let Ok(entries) = fs::read_dir(&entry.path) {
         for entry in entries.flatten() {
             result_vector.push(Entry::from_dir_entry(&entry));
         }
@@ -85,7 +123,7 @@ fn get_choices(path: &str) -> Vec<Entry> {
     if result_vector.len() < 2 {
         result_vector.push(Entry {
             name: String::from("<Open>"),
-            path: path.to_string(),
+            path: entry.path.clone(),
             icon: &Icons::EXPLORER,
             filetype: Filetype::Executable,
         });

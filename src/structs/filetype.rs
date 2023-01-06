@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum Filetype {
     Text, // (default)
     Executable,
@@ -17,6 +17,8 @@ pub enum Filetype {
     Symlink,
     Lnk,
     Unknown,
+    #[allow(dead_code)]
+    DriveView,
 }
 
 impl Filetype {
@@ -28,7 +30,7 @@ impl Filetype {
     pub const fn should_exec(&self) -> bool {
         !matches!(
             self,
-            Self::Directory | Self::Symlink | Self::Lnk | Self::Unknown
+            Self::Directory | Self::Symlink | Self::Lnk | Self::Unknown | Self::DriveView
         )
     }
 

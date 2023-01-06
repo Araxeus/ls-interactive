@@ -9,6 +9,7 @@ use fuzzy_matcher::FuzzyMatcher;
 use std::io;
 use unicode_segmentation::UnicodeSegmentation;
 
+use crate::Icons;
 /// Renders a selection menu that user can fuzzy match to reduce set.
 ///
 /// User can use fuzzy search to limit selectable items.
@@ -169,7 +170,7 @@ impl Prompt<'_> {
                         if cursor_pos > 0 {
                             cursor_pos -= 1;
                             term.flush()?;
-                        } else if search_term.is_empty() {
+                        } else if search_term.is_empty() && self.items[0].ends_with("..") {
                             if self.clear {
                                 render.clear()?;
                             }
@@ -186,7 +187,9 @@ impl Prompt<'_> {
                             cursor_pos += 1;
                             term.flush()?;
                         } else if search_term.is_empty()
-                            && filtered_list[sel].0.find('📁').is_some()
+                            && (filtered_list[sel].0.contains(Icons::DIR.str())
+                                || (cfg!(windows)
+                                    && filtered_list[sel].0.contains(Icons::DRIVE.str())))
                         {
                             if self.clear {
                                 render.clear()?;
