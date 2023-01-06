@@ -7,7 +7,7 @@ use structs::{Entry, Filetype, Icons};
 use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
 #[cfg(windows)]
-use utils::{get_logical_drives, get_pc_name};
+use utils::get_logical_drives;
 
 use tiny_update_notifier::check_github;
 
@@ -106,7 +106,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
         // .. Open Drives View on Windows
         result_vector.push(Entry {
             name: String::from(".."),
-            path: get_pc_name(),
+            path: env!("COMPUTERNAME").to_string(),
             icon: &Icons::PC,
             filetype: Filetype::DriveView,
         });

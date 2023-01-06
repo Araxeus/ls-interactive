@@ -70,13 +70,7 @@ pub fn pretty_path(path: &str) -> &str {
 #[cfg(windows)]
 use std::io::Error;
 #[cfg(windows)]
-use windows::{
-    core::PWSTR,
-    Win32::{
-        Storage::FileSystem::GetLogicalDrives,
-        System::SystemInformation::{ComputerNameNetBIOS, GetComputerNameExW},
-    },
-};
+use windows::Win32::Storage::FileSystem::GetLogicalDrives;
 
 #[cfg(windows)]
 pub fn get_logical_drives() -> Result<Vec<char>, Error> {
@@ -86,18 +80,6 @@ pub fn get_logical_drives() -> Result<Vec<char>, Error> {
     }
 
     Ok(bitmask_to_vec(bitmask))
-}
-
-#[cfg(windows)]
-pub fn get_pc_name() -> String {
-    let mut buffer = [0u16; 256];
-    #[allow(clippy::cast_possible_truncation)]
-    let mut size = buffer.len() as u32;
-    unsafe {
-        GetComputerNameExW(ComputerNameNetBIOS, PWSTR(buffer.as_mut_ptr()), &mut size);
-    }
-    let name = String::from_utf16_lossy(&buffer);
-    format!("{name}:\\\\")
 }
 
 #[cfg(windows)]
