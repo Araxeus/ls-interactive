@@ -1,4 +1,4 @@
-use crate::structs::{ColorfulTheme, Entry, Prompt};
+use crate::structs::{Entry, Prompt, Theme};
 
 use console::style;
 
@@ -38,7 +38,7 @@ pub fn resolve_lnk(path: &String) -> String {
 
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    Prompt::with_theme(&ColorfulTheme::default())
+    Prompt::with_theme(&Theme::default())
         .title(pretty_path(path))
         .items(items)
         .run()
@@ -63,6 +63,14 @@ pub fn pretty_path(path: &str) -> &str {
     } else {
         path
     }
+}
+
+pub fn link(path: &str) -> String {
+    link_with_label(path, path)
+}
+
+pub fn link_with_label(path: &str, label: &str) -> String {
+    format!("\u{1b}]8;;{path}\u{1b}\\{label}\u{1b}]8;;\u{1b}\\")
 }
 
 /**** WINDOWS ONLY ****/

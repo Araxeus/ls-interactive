@@ -9,5 +9,5 @@ pub use crate::structs::{
     filetype::Filetype,
     icons::{Icon, Icons},
     prompt::Prompt,
-    prompt_renderer::ColorfulTheme,
+    prompt_renderer::Theme,
 };

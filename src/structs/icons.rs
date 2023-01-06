@@ -2,13 +2,14 @@ use super::Filetype;
 
 use std::fmt;
 
+#[derive(PartialEq, Eq)]
 pub struct Icon(&'static str);
 
-impl Icon {
-    pub const fn str(&self) -> &'static str {
-        self.0
-    }
-}
+// impl Icon {
+//     pub const fn str(&self) -> &'static str {
+//         self.0
+//     }
+// }
 
 impl fmt::Display for Icon {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -39,6 +40,7 @@ impl Icons {
 
     // Windows Only
     pub const PC: Icon = Icon("🖥️");
+    #[allow(dead_code)]
     pub const DRIVE: Icon = Icon("💽");
 
     // TODO

@@ -1,4 +1,7 @@
-use super::prompt_renderer::{SimpleTheme, TermRenderer, Theme};
+use super::{
+    prompt_renderer::{TermRenderer, Theme},
+    Entry, Filetype,
+};
 use console::Term;
 use crossterm::{
     event::{read, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -9,40 +12,26 @@ use fuzzy_matcher::FuzzyMatcher;
 use std::io;
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::Icons;
 /// Renders a selection menu that user can fuzzy match to reduce set.
 ///
 /// User can use fuzzy search to limit selectable items.
 /// Interaction returns index of an item selected in the order they appear in `item` invocation or `items` slice.
-
 pub struct Prompt<'a> {
     default: usize,
-    items: Vec<String>,
+    items: Vec<Entry>,
     title: String,
     report: bool,
     clear: bool,
     highlight_matches: bool,
-    theme: &'a dyn Theme,
-}
-
-impl Default for Prompt<'static> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Prompt<'static> {
-    /// Creates the prompt with a specific text.
-    pub fn new() -> Self {
-        Self::with_theme(&SimpleTheme)
-    }
+    theme: &'a Theme,
 }
 
 impl Prompt<'_> {
     /// Adds multiple items to the fuzzy selector.
-    pub fn items<T: ToString>(&mut self, items: &[T]) -> &mut Self {
-        for item in items {
-            self.items.push(item.to_string());
+    pub fn items(&mut self, items: &[Entry]) -> &mut Self {
+        let its = items.to_owned();
+        for item in its {
+            self.items.push(item);
         }
         self
     }
@@ -78,9 +67,9 @@ impl Prompt<'_> {
         let mut sel = self.default;
 
         let mut size_vec = Vec::new();
-        for items in self.items.iter().as_slice() {
-            let size = &items.len();
-            size_vec.push(*size);
+        for item in self.items.iter().as_slice() {
+            let size = &item.name.len() + 2;
+            size_vec.push(size);
         }
 
         // Fuzzy matcher
@@ -107,7 +96,7 @@ impl Prompt<'_> {
             let mut filtered_list = self
                 .items
                 .iter()
-                .map(|item| (item, matcher.fuzzy_match(item, &search_term.concat())))
+                .map(|item| (item, matcher.fuzzy_match(&item.name, &search_term.concat())))
                 .filter_map(|(item, score)| score.map(|s| (item, s)))
                 .collect::<Vec<_>>();
 
@@ -170,7 +159,7 @@ impl Prompt<'_> {
                         if cursor_pos > 0 {
                             cursor_pos -= 1;
                             term.flush()?;
-                        } else if search_term.is_empty() && self.items[0].ends_with("..") {
+                        } else if search_term.is_empty() && self.items[0].name.ends_with("..") {
                             if self.clear {
                                 render.clear()?;
                             }
@@ -187,18 +176,18 @@ impl Prompt<'_> {
                             cursor_pos += 1;
                             term.flush()?;
                         } else if search_term.is_empty()
-                            && (filtered_list[sel].0.contains(Icons::DIR.str())
-                                || (cfg!(windows)
-                                    && filtered_list[sel].0.contains(Icons::DRIVE.str())))
+                            && (filtered_list[sel].0.filetype == Filetype::Directory)
+                            || (cfg!(windows)
+                                && filtered_list[sel].0.filetype == Filetype::DriveView)
                         {
                             if self.clear {
                                 render.clear()?;
                             }
-                            let sel_string = filtered_list[sel].0;
+
                             let sel_string_pos_in_items = self
                                 .items
                                 .iter()
-                                .position(|item| item.eq(sel_string))
+                                .position(|item| item.name.eq(&filtered_list[sel].0.name))
                                 .unwrap();
 
                             terminal::disable_raw_mode()?;
@@ -216,15 +205,14 @@ impl Prompt<'_> {
                         if self.report {
                             render.input_prompt_selection(
                                 self.title.as_str(),
-                                filtered_list[sel].0,
+                                &filtered_list[sel].0.name,
                             )?;
                         }
 
-                        let sel_string = filtered_list[sel].0;
                         let sel_string_pos_in_items = self
                             .items
                             .iter()
-                            .position(|item| item.eq(sel_string))
+                            .position(|item| item.name.eq(&filtered_list[sel].0.name))
                             .unwrap();
 
                         terminal::disable_raw_mode()?;
@@ -260,7 +248,7 @@ impl Prompt<'_> {
 
 impl<'a> Prompt<'a> {
     /// Same as `new` but with a specific theme.
-    pub fn with_theme(theme: &'a dyn Theme) -> Self {
+    pub const fn with_theme(theme: &'a Theme) -> Self {
         Self {
             default: 0,
             items: vec![],
