@@ -12,14 +12,14 @@ keywords = ["ls", "lsi", "cli", "interactive", "explorer", "list", "files", "fol
 categories = ["command-line-utilities"]
 
 [dependencies]
-console = "=0.15.4" # ANY LATER VERSION BREAKS SCROLLING (0.15.1 - 0.15.3 tested)
+console = "0.15.5"
 open = "3.2.0"
 human-panic = "1.0.3"
-lnk = "0.4.1"
+lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
 crossterm = "0.25.0"
 unicode-segmentation = "1.10.0"
 tiny_update_notifier = "2.1.0"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.43.0", features = ["Win32_Storage_FileSystem"] }
+windows = { version = "0.44.0", features = ["Win32_Storage_FileSystem"] }
