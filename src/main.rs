@@ -42,6 +42,11 @@ fn main_loop(initial_path: String) {
 
         let entry = choices[index].clone();
 
+        if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
+            print!("{}", pretty_path(&entry.path));
+            break;
+        }
+
         // exec file
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             match open::that(&entry.path) {
@@ -53,11 +58,6 @@ fn main_loop(initial_path: String) {
                     pretty_path(&entry.path)
                 )),
             }
-        }
-
-        if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
-            print!("{}", pretty_path(&entry.path));
-            break;
         }
 
         // browse directory by continuing loop with new path
