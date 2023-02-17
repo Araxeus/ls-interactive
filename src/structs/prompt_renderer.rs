@@ -43,7 +43,7 @@ pub trait Theme {
 
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(text, search_term) {
-                for (idx, c) in text.chars().into_iter().enumerate() {
+                for (idx, c) in text.chars().enumerate() {
                     if indices.contains(&idx) {
                         write!(f, "{}", style(c).for_stderr().bold())?;
                     } else {
@@ -239,7 +239,7 @@ impl Theme for ColorfulTheme {
 
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(text, search_term) {
-                for (idx, c) in text.chars().into_iter().enumerate() {
+                for (idx, c) in text.chars().enumerate() {
                     if text.starts_with('\u{1f5a5}') && c == ' ' && active {
                         continue; // fix `🖥️ ..` is printed as `🖥️  ..`
                     };
