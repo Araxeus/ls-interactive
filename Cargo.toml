@@ -17,7 +17,7 @@ open = "3.2.0"
 human-panic = "1.0.3"
 lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
-crossterm = "0.25.0"
+crossterm = "0.26.0"
 unicode-segmentation = "1.10.1"
 tiny_update_notifier = "2.1.0"
 
