@@ -1,4 +1,4 @@
-#add the following function to /home/user/.bashrc
+# Add the following function to /home/user/.bashrc or /home/user/.zshrc
 
 lsi() {
   local output

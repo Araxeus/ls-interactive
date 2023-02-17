@@ -1,8 +1,7 @@
 #!/usr/bin/env fish
 
 # Command for ls-interactive use.
-# Copy this file into ~/.config/fish/functions/
-# to have it accessible at all times.
+# Copy this file into ~/.config/fish/functions/ OR copy this function into your config.fish
 
 function lsi
     set -l output (ls-interactive "$argv")
