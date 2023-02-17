@@ -18,7 +18,7 @@ human-panic = "1.0.3"
 lnk = "0.4.1"
 fuzzy-matcher = "0.3.7"
 crossterm = "0.25.0"
-unicode-segmentation = "1.10.0"
+unicode-segmentation = "1.10.1"
 tiny_update_notifier = "2.1.0"
 
 [target.'cfg(windows)'.dependencies]
