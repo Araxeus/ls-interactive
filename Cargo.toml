@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 console = "=0.15.5" # ANY LATER VERSION BREAKS SCROLLING (0.15.1 - 0.15.3 tested)
-open = "3.2.0"
+open = "3.4.0"
 human-panic = "1.0.3"
 lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
