@@ -4,7 +4,7 @@ use super::{
 };
 use console::Term;
 use crossterm::{
-    event::{read, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     terminal,
 };
 
@@ -122,7 +122,10 @@ impl Prompt<'_> {
             terminal::enable_raw_mode()?;
 
             if let Event::Key(KeyEvent {
-                code, modifiers, ..
+                code,
+                modifiers,
+                kind: KeyEventKind::Press | KeyEventKind::Repeat,
+                ..
             }) = read().unwrap()
             {
                 match code {
@@ -176,9 +179,10 @@ impl Prompt<'_> {
                             cursor_pos += 1;
                             term.flush()?;
                         } else if search_term.is_empty()
-                            && (filtered_list[sel].0.filetype == Filetype::Directory)
-                            || (cfg!(windows)
-                                && filtered_list[sel].0.filetype == Filetype::DriveView)
+                            && !filtered_list.is_empty()
+                            && (filtered_list[sel].0.filetype == Filetype::Directory
+                                || (cfg!(windows)
+                                    && filtered_list[sel].0.filetype == Filetype::DriveView))
                         {
                             if self.clear {
                                 render.clear()?;
