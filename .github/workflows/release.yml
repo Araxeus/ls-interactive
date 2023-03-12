@@ -42,7 +42,7 @@ jobs:
       - name: Get filename
         id: filename
         shell: sh
-        run: echo ::set-output name=FILENAME::"lsi_${GITHUB_REF#refs/tags/}_${{ matrix.name }}.${{ matrix.extension }}"
+        run: echo "FILENAME=lsi_${GITHUB_REF#refs/tags/}_${{ matrix.name }}.${{ matrix.extension }}" >> $GITHUB_OUTPUT
 
       - name: Tar (Unix)
         if: matrix.os != 'windows-latest'
