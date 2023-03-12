@@ -151,7 +151,7 @@ impl Theme {
 
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(&entry.name, search_term) {
-                for (idx, c) in entry.name.chars().into_iter().enumerate() {
+                for (idx, c) in entry.name.chars().enumerate() {
                     let char;
                     if indices.contains(&idx) && !is_rtl(c) {
                         if active {
