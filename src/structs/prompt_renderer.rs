@@ -4,93 +4,12 @@ use std::{fmt, io};
 use console::{style, Style, StyledObject, Term};
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 
-/// Implements a theme for dialoguer.
-pub trait Theme {
-    /// Formats a prompt.
-    #[inline]
-    fn format_prompt(&self, f: &mut dyn fmt::Write, prompt: &str) -> fmt::Result {
-        write!(f, "{prompt}:")
-    }
+use crate::utils::{link, link_with_label, pretty_path};
 
-    /// Formats out an error.
-    #[inline]
-    fn format_error(&self, f: &mut dyn fmt::Write, err: &str) -> fmt::Result {
-        write!(f, "error: {err}")
-    }
-
-    /// Formats an input prompt after selection.
-    #[inline]
-    fn format_input_prompt_selection(
-        &self,
-        f: &mut dyn fmt::Write,
-        prompt: &str,
-        sel: &str,
-    ) -> fmt::Result {
-        write!(f, "{prompt}: {sel}")
-    }
-
-    /// Formats a fuzzy select prompt item.
-    fn format_fuzzy_select_prompt_item(
-        &self,
-        f: &mut dyn fmt::Write,
-        text: &str,
-        active: bool,
-        highlight_matches: bool,
-        matcher: &SkimMatcherV2,
-        search_term: &str,
-    ) -> fmt::Result {
-        write!(f, "{} ", if active { ">" } else { " " })?;
-
-        if highlight_matches {
-            if let Some((_score, indices)) = matcher.fuzzy_indices(text, search_term) {
-                for (idx, c) in text.chars().enumerate() {
-                    if indices.contains(&idx) {
-                        write!(f, "{}", style(c).for_stderr().bold())?;
-                    } else {
-                        write!(f, "{c}")?;
-                    }
-                }
-
-                return Ok(());
-            }
-        }
-
-        write!(f, "{text}")
-    }
-
-    /// Formats a fuzzy select prompt.
-    fn format_fuzzy_select_prompt(
-        &self,
-        f: &mut dyn fmt::Write,
-        prompt: &str,
-        search_term: &[String],
-        cursor_pos: usize,
-    ) -> fmt::Result {
-        if !prompt.is_empty() {
-            write!(f, "{prompt} ",)?;
-        }
-
-        if cursor_pos < search_term.len() {
-            let split = search_term.split_at(cursor_pos);
-            let head = split.0.concat();
-            let cursor = "|".to_string();
-            let tail = split.1.concat();
-
-            write!(f, "{head}{cursor}{tail}")
-        } else {
-            let cursor = "|".to_string();
-            write!(f, "{}{cursor}", search_term.concat())
-        }
-    }
-}
-
-/// The default theme.
-pub struct SimpleTheme;
-
-impl Theme for SimpleTheme {}
+use super::Entry;
 
 /// A colorful theme
-pub struct ColorfulTheme {
+pub struct Theme {
     /// The style for default values
     pub defaults_style: Style,
     /// The style for prompt
@@ -135,7 +54,7 @@ pub struct ColorfulTheme {
     pub inline_selections: bool,
 }
 
-impl Default for ColorfulTheme {
+impl Default for Theme {
     fn default() -> Self {
         Self {
             defaults_style: Style::new().for_stderr().cyan(),
@@ -163,21 +82,7 @@ impl Default for ColorfulTheme {
     }
 }
 
-impl Theme for ColorfulTheme {
-    /// Formats a prompt.
-    fn format_prompt(&self, f: &mut dyn fmt::Write, prompt: &str) -> fmt::Result {
-        if !prompt.is_empty() {
-            write!(
-                f,
-                "{} {} ",
-                &self.prompt_prefix,
-                self.prompt_style.apply_to(prompt)
-            )?;
-        }
-
-        write!(f, "{}", &self.prompt_suffix)
-    }
-
+impl Theme {
     /// Formats an error
     fn format_error(&self, f: &mut dyn fmt::Write, err: &str) -> fmt::Result {
         write!(
@@ -216,7 +121,7 @@ impl Theme for ColorfulTheme {
     fn format_fuzzy_select_prompt_item(
         &self,
         f: &mut dyn fmt::Write,
-        text: &str,
+        entry: &Entry,
         active: bool,
         highlight_matches: bool,
         matcher: &SkimMatcherV2,
@@ -227,46 +132,46 @@ impl Theme for ColorfulTheme {
             ('\u{0591}'..='\u{07FF}').contains(&c) // c >= '\u{0591}' && c <= '\u{07FF}'
         }
 
+        let mut output = String::new();
+
         write!(
             f,
-            "{} ",
+            "{}",
             if active {
-                &self.active_item_prefix
+                format!("{} {} ", &self.active_item_prefix, entry.icon,)
             } else {
-                &self.inactive_item_prefix
-            }
+                format!("{} {} ", &self.inactive_item_prefix, entry.icon)
+            },
         )?;
 
         if highlight_matches {
-            if let Some((_score, indices)) = matcher.fuzzy_indices(text, search_term) {
-                for (idx, c) in text.chars().enumerate() {
-                    if text.starts_with('\u{1f5a5}') && c == ' ' && active {
-                        continue; // fix `🖥️ ..` is printed as `🖥️  ..`
-                    };
+            if let Some((_score, indices)) = matcher.fuzzy_indices(&entry.name, search_term) {
+                for (idx, c) in entry.name.chars().enumerate() {
+                    let char;
+
                     if indices.contains(&idx) && !is_rtl(c) {
                         if active {
-                            write!(
-                                f,
+                            char = format!(
                                 "{}",
                                 self.active_item_style
                                     .apply_to(self.fuzzy_match_highlight_style.apply_to(c))
-                            )?;
+                            );
                         } else {
-                            write!(f, "{}", self.fuzzy_match_highlight_style.apply_to(c))?;
+                            char = format!("{}", self.fuzzy_match_highlight_style.apply_to(c));
                         }
-                    } else if active && c != '\u{1f5a5}' && c != '\u{fe0f}' {
-                        // Fix `🖥️` is printed as `🖥 ` (because painting those unicode chars breaks the emoji)
-                        write!(f, "{}", self.active_item_style.apply_to(c))?;
+                    } else if active {
+                        char = format!("{}", self.active_item_style.apply_to(c));
                     } else {
-                        write!(f, "{c}")?;
-                    }
+                        char = format!("{c}");
+                    };
+                    output.push_str(&char);
                 }
-
+                write!(f, "{}", link_with_label(pretty_path(&entry.path), &output))?;
                 return Ok(());
             }
         }
 
-        write!(f, "{text}")
+        write!(f, "{}", entry.name)
     }
 
     /// Formats a fuzzy-selectprompt after selection.
@@ -282,7 +187,7 @@ impl Theme for ColorfulTheme {
                 f,
                 "{} {} ",
                 &self.prompt_prefix,
-                self.prompt_style.apply_to(prompt)
+                self.prompt_style.apply_to(link(prompt))
             )?;
         }
 
@@ -309,14 +214,14 @@ impl Theme for ColorfulTheme {
 /// Helper struct to conveniently render a theme ot a term.
 pub struct TermRenderer<'a> {
     term: &'a Term,
-    theme: &'a dyn Theme,
+    theme: &'a Theme,
     height: usize,
     prompt_height: usize,
     prompts_reset_height: bool,
 }
 
 impl<'a> TermRenderer<'a> {
-    pub fn new(term: &'a Term, theme: &'a dyn Theme) -> TermRenderer<'a> {
+    pub const fn new(term: &'a Term, theme: &'a Theme) -> TermRenderer<'a> {
         TermRenderer {
             term,
             theme,
@@ -372,7 +277,7 @@ impl<'a> TermRenderer<'a> {
 
     pub fn fuzzy_select_prompt_item(
         &mut self,
-        text: &str,
+        entry: &Entry,
         active: bool,
         highlight: bool,
         matcher: &SkimMatcherV2,
@@ -381,7 +286,7 @@ impl<'a> TermRenderer<'a> {
         self.write_formatted_line(|this, buf| {
             this.theme.format_fuzzy_select_prompt_item(
                 buf,
-                text,
+                entry,
                 active,
                 highlight,
                 matcher,
