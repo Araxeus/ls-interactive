@@ -13,13 +13,13 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 console = "0.15.5"
-open = "3.2.0"
-human-panic = "1.0.3"
+open = "4.0.0"
+human-panic = "1.1.1"
 lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
-crossterm = "0.25.0"
-unicode-segmentation = "1.10.0"
-tiny_update_notifier = "2.1.0"
+crossterm = "0.26.1"
+unicode-segmentation = "1.10.1"
+tiny_update_notifier = "2.2.0"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.44.0", features = ["Win32_Storage_FileSystem"] }
