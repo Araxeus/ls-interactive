@@ -6,7 +6,7 @@ use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 
 use crate::utils::{link, link_with_label, pretty_path};
 
-use super::{Entry, Icons};
+use super::Entry;
 
 /// A colorful theme
 pub struct Theme {
@@ -138,12 +138,7 @@ impl Theme {
             f,
             "{}",
             if active {
-                format!(
-                    "{} {}{}",
-                    &self.active_item_prefix,
-                    entry.icon,
-                    if entry.icon.eq(&Icons::PC) { "" } else { " " },
-                )
+                format!("{} {} ", &self.active_item_prefix, entry.icon,)
             } else {
                 format!("{} {} ", &self.inactive_item_prefix, entry.icon)
             },
@@ -152,10 +147,8 @@ impl Theme {
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(&entry.name, search_term) {
                 for (idx, c) in entry.name.chars().enumerate() {
-                    if entry.name.starts_with('\u{1f5a5}') && c == ' ' && active {
-                        continue; // fix `🖥️ ..` is printed as `🖥️  ..`
-                    };
                     let char;
+
                     if indices.contains(&idx) && !is_rtl(c) {
                         if active {
                             char = format!(
