@@ -38,48 +38,51 @@
 ## 🛠 Installation
 
 1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
-   
+
 2. Extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
-   
+
 3. Follow shell specific instructions:
 <details>
-  <summary><bold>Bash (Linux/Mac)</bold></summary>
+  <summary><bold>Bash (Linux/Mac) or Zsh</bold></summary>
 
-  * Copy the `lsi` function from [scripts/lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into to `/home/user/.bashrc`
+* Copy the `lsi` function from [scripts/lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/sh) to your `~/.bashrc` or `~/.zshrc` file:
 
-    ```bash
-    gedit /home/user/.bashrc
-    ```
- 
+    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.sh#L3-L8
+
 </details>
 
 <details>
-  <summary><bold>Batch (Windows)</bold></summary>
+  <summary><bold>Batch (Windows CMD)</bold></summary>
 
-  * Copy [scripts/lsi.bat](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into a folder in your `%PATH%` environment variable
+  * Copy [scripts/lsi.bat](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into a folder that is in your `%PATH%` environment variable
 
-    you can open you envionment variables settings using the following command:
+    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.bat#L3-L5
+
+    you can open you environment variables settings using the command below: (or by searching for `env` in the start menu)
 
     ```batch
     rundll32.exe sysdm.cpl,EditEnvironmentVariables
     ```
- 
+
 </details>
 
 <details>
   <summary><bold>Fish Shell</bold></summary>
 
   * Copy [scripts/lsi.fish](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.fish) into `~/.config/fish/functions/`
-   
-    (Windows WSL is currently unsupported)
 
-  
- 
+    OR copy the function inside into your `~/.config/fish/config.fish` file
+
+    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.fish#L7-L13
+
+
 </details>
 <details>
   <summary><bold>Powershell</bold></summary>
 
   * Copy the `lsi` function from [scripts/lsi.ps1](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
+
+    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.ps1#L7-L10
 
     you can open your profile using one of the following commands:
 
@@ -87,11 +90,11 @@
     notepad $profile
     ```
     <br>
-   
+
     ```ps1
     gedit $profile
     ```
- 
+
 </details>
 
 <details>
@@ -99,17 +102,14 @@
 
   * Copy the `lsi` function from [scripts/lsi.nu](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.nu) to your `env.nu`
 
-    you can open your profile using one of the following commands:
+    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.nu#L7-L13
+
+    you can open your environment file using the following command:
 
     ```bash
-    notepad $nu.env-path
+    config env
     ```
-    <br>
-   
-    ```bash
-    gedit $nu.env-path
-    ```
- 
+
 </details>
 
 ## 💻 How to run it

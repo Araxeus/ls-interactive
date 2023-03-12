@@ -14,12 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
           components: rustfmt, clippy
-          toolchain: stable
-          override: true
 
       - uses: Swatinem/rust-cache@v2
 
@@ -34,11 +31,9 @@ jobs:
 
       - name: Create Clippy output job
         if: success() || failure() # run regardless of prior step
-        uses: actions-rs/clippy-check@v1
+        uses: actions-rs-plus/clippy-check@main
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -W clippy::pedantic -W clippy::cargo -W clippy::nursery -D warnings
-          name: Clippy Result
 
       - name: Clippy check
         run: cargo clippy

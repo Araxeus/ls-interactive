@@ -152,6 +152,9 @@ impl Theme {
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(&entry.name, search_term) {
                 for (idx, c) in entry.name.chars().enumerate() {
+                    if entry.name.starts_with('\u{1f5a5}') && c == ' ' && active {
+                        continue; // fix `🖥️ ..` is printed as `🖥️  ..`
+                    };
                     let char;
                     if indices.contains(&idx) && !is_rtl(c) {
                         if active {
