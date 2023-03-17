@@ -183,11 +183,16 @@ impl Theme {
         cursor_pos: usize,
     ) -> fmt::Result {
         if !prompt.is_empty() {
+            let link_text = if cfg!(windows) && prompt == env!("COMPUTERNAME") {
+                link_with_label("shell:MyComputerFolder", prompt)
+            } else {
+                link(prompt)
+            };
             write!(
                 f,
                 "{} {} ",
                 &self.prompt_prefix,
-                self.prompt_style.apply_to(link(prompt))
+                self.prompt_style.apply_to(link_text)
             )?;
         }
 
