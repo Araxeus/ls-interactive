@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 console = "0.15.5"
-open = "4.0.0"
+open = "4.0.1"
 human-panic = "1.1.1"
 lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
