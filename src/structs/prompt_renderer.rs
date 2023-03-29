@@ -1,10 +1,10 @@
 //! Customizes the rendering of the elements.
-use std::{env, fmt, io};
+use std::{fmt, io};
 
 use console::{style, Style, StyledObject, Term};
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 
-use crate::utils::{link, link_with_label, pretty_path};
+use crate::utils::{get_computer_name, link, link_with_label, pretty_path};
 
 use super::Entry;
 
@@ -183,9 +183,7 @@ impl Theme {
         cursor_pos: usize,
     ) -> fmt::Result {
         if !prompt.is_empty() {
-            let link_text = if cfg!(windows)
-                && prompt == env::var("COMPUTERNAME").unwrap_or("My Computer".to_string())
-            {
+            let link_text = if cfg!(windows) && prompt == get_computer_name() {
                 link_with_label("shell:MyComputerFolder", prompt)
             } else {
                 link(prompt)
