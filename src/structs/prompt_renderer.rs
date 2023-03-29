@@ -1,5 +1,5 @@
 //! Customizes the rendering of the elements.
-use std::{fmt, io};
+use std::{env, fmt, io};
 
 use console::{style, Style, StyledObject, Term};
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
@@ -183,7 +183,9 @@ impl Theme {
         cursor_pos: usize,
     ) -> fmt::Result {
         if !prompt.is_empty() {
-            let link_text = if cfg!(windows) && prompt == env!("COMPUTERNAME") {
+            let link_text = if cfg!(windows)
+                && prompt == env::var("COMPUTERNAME").unwrap_or("My Computer".to_string())
+            {
                 link_with_label("shell:MyComputerFolder", prompt)
             } else {
                 link(prompt)
