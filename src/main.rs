@@ -40,7 +40,11 @@ fn main_loop(initial_path: String) {
         let entry = choices[index].clone();
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
-            print!("{}", pretty_path(&entry.path));
+            if index == 0 {
+                print!("{}", pretty_path(&selected_entry.path));
+            } else {
+                print!("{}", pretty_path(&entry.path));
+            }
             break;
         }
 
