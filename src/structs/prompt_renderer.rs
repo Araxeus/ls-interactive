@@ -4,7 +4,7 @@ use std::{fmt, io};
 use console::{style, Style, StyledObject, Term};
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 
-use crate::utils::{link, link_with_label, pretty_path};
+use crate::utils::{get_computer_name, link, link_with_label, pretty_path};
 
 use super::Entry;
 
@@ -183,11 +183,16 @@ impl Theme {
         cursor_pos: usize,
     ) -> fmt::Result {
         if !prompt.is_empty() {
+            let link_text = if cfg!(windows) && prompt == get_computer_name() {
+                link_with_label("shell:MyComputerFolder", prompt)
+            } else {
+                link(prompt)
+            };
             write!(
                 f,
                 "{} {} ",
                 &self.prompt_prefix,
-                self.prompt_style.apply_to(link(prompt))
+                self.prompt_style.apply_to(link_text)
             )?;
         }
 

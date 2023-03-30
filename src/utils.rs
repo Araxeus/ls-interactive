@@ -100,3 +100,8 @@ fn bitmask_to_vec(bitmask: u32) -> Vec<char> {
     }
     vec
 }
+
+#[cached::proc_macro::once]
+pub fn get_computer_name() -> String {
+    env::var("COMPUTERNAME").unwrap_or_else(|_| String::from("My Computer"))
+}
