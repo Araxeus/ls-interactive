@@ -102,7 +102,7 @@
 
   * Copy the `lsi` function from [scripts/lsi.nu](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.nu) to your `env.nu`
 
-    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.nu#L7-L13
+    https://github.com/Araxeus/ls-interactive/blob/d4f56a1cdc3812b00e2ad4812ab42a2082021935/scripts/lsi.nu#L7-L13
 
     you can open your environment file using the following command:
 
