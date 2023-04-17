@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 console = "0.15.5"
-open = "4.0.1"
+open = "4.0.2"
 human-panic = "1.1.4"
 lnk = "0.5.1"
 fuzzy-matcher = "0.3.7"
