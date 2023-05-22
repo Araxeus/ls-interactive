@@ -16,7 +16,7 @@ name = "ls-interactive"
 path = "src/main.rs"
 
 [dependencies]
-console = "0.15.5"
+console = "0.15.7"
 open = "4.1.0"
 human-panic = "1.1.4"
 lnk = "0.5.1"
