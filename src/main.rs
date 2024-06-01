@@ -1,3 +1,4 @@
+#![allow(clippy::multiple_crate_versions)]
 mod structs;
 mod utils;
 
@@ -52,7 +53,7 @@ fn main_loop(initial_path: String) {
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             match open::that(&entry.path) {
                 // quit if file was opened
-                Ok(_) => break,
+                Ok(()) => break,
                 // else display error and open as directory
                 Err(_) => err(format!(
                     "Failed to open file \"{}\"",
