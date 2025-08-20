@@ -19,7 +19,7 @@
 
 🌟 Navigate between folders/files using arrow keys
 
-🌟 Browse folders / Open files with native apps using using <kbd>Enter</kbd>
+🌟 Browse folders / Open files with native apps using <kbd>Enter</kbd>
 
 🌟 Open folder in terminal (CD to folder) using <kbd>Shift</kbd>+<kbd>Enter</kbd> or <kbd>Alt</kbd>+<kbd>Enter</kbd>
 
