@@ -58,7 +58,11 @@ impl Prompt<'_> {
     /// Like `interact` but allows a specific terminal to be set.
     /// Ignore `clippy::too-many-lines`
     #[allow(clippy::too_many_lines)] // TODO: refactor
-    fn run_internal(&self, term: &Term, allow_quit: bool) -> io::Result<Option<(usize, KeyModifiers)>> {
+    fn run_internal(
+        &self,
+        term: &Term,
+        allow_quit: bool,
+    ) -> io::Result<Option<(usize, KeyModifiers)>> {
         // This cursor iterates over the graphemes vec rather than the search term
         let mut cursor_pos = 0;
         let mut search_term: Vec<String> = Vec::new();
