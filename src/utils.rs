@@ -21,7 +21,7 @@ pub fn resolve_lnk(path: &String) -> String {
 
     if link.is_err() {
         err(format!("Failed to read shortcut \"{}\"", pretty_path(path)));
-        return path.to_string();
+        return path.clone();
     }
 
     let path_to_open = link
@@ -31,7 +31,7 @@ pub fn resolve_lnk(path: &String) -> String {
         .and_then(|link_target| fs::canonicalize(link_target).ok());
 
     path_to_open.map_or_else(
-        || path.to_string(),
+        || path.clone(),
         |path_to_open| path_to_open.to_string_lossy().to_string(),
     )
 }
