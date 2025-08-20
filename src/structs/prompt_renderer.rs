@@ -164,7 +164,7 @@ impl Theme {
                         char = format!("{}", self.active_item_style.apply_to(c));
                     } else {
                         char = format!("{c}");
-                    };
+                    }
                     output.push_str(&char);
                 }
                 write!(f, "{}", link_with_label(pretty_path(&entry.path), &output))?;
@@ -246,7 +246,7 @@ impl<'a> TermRenderer<'a> {
         f: F,
     ) -> io::Result<()> {
         let mut buf = String::new();
-        f(self, &mut buf).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        f(self, &mut buf).map_err(io::Error::other)?;
         self.height += buf.chars().filter(|&x| x == '\n').count() + 1;
         self.term.write_line(&buf)
     }
