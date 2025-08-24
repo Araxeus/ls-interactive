@@ -19,15 +19,46 @@ fn main() {
     );
 
     // path = first arg or current dir
-    let path = get_first_arg().map_or_else(|| String::from("."), |path| path);
+    let mut path = get_first_arg().map_or_else(|| String::from("."), |path| path);
+
+    if path == "--help" || path == "-h" {
+        println!(
+            "Usage: {} [path] [flags]
+
+Flags:
+    -v, --version   Print version   
+    -h, --help      Print help
+    -x, --no-exec   Don't execute files
+",
+            env!("CARGO_PKG_NAME")
+        );
+        return;
+    }
+
+    if path == "--version" || path == "-v" {
+        println!("{}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
+    let no_exec_flags = ["--no-exec", "--noexec", "-x"];
+
+    let mut no_exec = false;
+    if let Some(index) = no_exec_flags.iter().position(|&flag| path.contains(flag)) {
+        no_exec = true;
+        let flag = no_exec_flags[index];
+        path = path.replace(flag, "").trim().to_owned();
+        if path.is_empty() {
+            path = String::from(".");
+        }
+    }
 
     fs::canonicalize(path).map_or_else(
         |_| err("Invalid Path"),
-        |path| main_loop(path.to_string_lossy().to_string()),
+        |path| main_loop(path.to_string_lossy().to_string(), no_exec),
     );
 }
 
-fn main_loop(initial_path: String) {
+fn main_loop(initial_path: String, no_exec: bool) {
     let mut selected_entry = Entry {
         path: initial_path,
         ..Default::default()
@@ -51,6 +82,10 @@ fn main_loop(initial_path: String) {
 
         // exec file
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
+            if no_exec {
+                print!("{}", pretty_path(&entry.path));
+                break;
+            }
             match open::that(&entry.path) {
                 // quit if file was opened
                 Ok(()) => break,
