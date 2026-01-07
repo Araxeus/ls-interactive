@@ -9,6 +9,7 @@ use crate::utils::{get_computer_name, link, link_with_label, pretty_path};
 use super::Entry;
 
 /// A colorful theme
+#[allow(dead_code)]
 pub struct Theme {
     /// The style for default values
     pub defaults_style: Style,
@@ -163,7 +164,7 @@ impl Theme {
                         char = format!("{}", self.active_item_style.apply_to(c));
                     } else {
                         char = format!("{c}");
-                    };
+                    }
                     output.push_str(&char);
                 }
                 write!(f, "{}", link_with_label(pretty_path(&entry.path), &output))?;
@@ -199,7 +200,7 @@ impl Theme {
         if cursor_pos < search_term.len() {
             let split = search_term.split_at(cursor_pos);
             let head = split.0.concat();
-            let cursor = self.fuzzy_cursor_style.apply_to(split.1.get(0).unwrap());
+            let cursor = self.fuzzy_cursor_style.apply_to(split.1.first().unwrap());
             let tail = split.1[1..].concat();
 
             write!(f, "{} {head}{cursor}{tail}", &self.prompt_suffix)
@@ -226,7 +227,7 @@ pub struct TermRenderer<'a> {
 }
 
 impl<'a> TermRenderer<'a> {
-    pub const fn new(term: &'a Term, theme: &'a Theme) -> TermRenderer<'a> {
+    pub const fn new(term: &'a Term, theme: &'a Theme) -> Self {
         TermRenderer {
             term,
             theme,
@@ -245,7 +246,7 @@ impl<'a> TermRenderer<'a> {
         f: F,
     ) -> io::Result<()> {
         let mut buf = String::new();
-        f(self, &mut buf).map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        f(self, &mut buf).map_err(io::Error::other)?;
         self.height += buf.chars().filter(|&x| x == '\n').count() + 1;
         self.term.write_line(&buf)
     }

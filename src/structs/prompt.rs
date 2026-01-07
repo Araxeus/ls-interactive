@@ -52,13 +52,17 @@ impl Prompt<'_> {
     /// Result contains `Some(index)` if user hit 'Enter' or `None` if user cancelled with 'Esc' or 'q'.
     #[inline]
     pub fn run(&self) -> io::Result<Option<(usize, KeyModifiers)>> {
-        self._run(&Term::stderr(), true)
+        self.run_internal(&Term::stderr(), true)
     }
 
     /// Like `interact` but allows a specific terminal to be set.
     /// Ignore `clippy::too-many-lines`
     #[allow(clippy::too_many_lines)] // TODO: refactor
-    fn _run(&self, term: &Term, allow_quit: bool) -> io::Result<Option<(usize, KeyModifiers)>> {
+    fn run_internal(
+        &self,
+        term: &Term,
+        allow_quit: bool,
+    ) -> io::Result<Option<(usize, KeyModifiers)>> {
         // This cursor iterates over the graphemes vec rather than the search term
         let mut cursor_pos = 0;
         let mut search_term: Vec<String> = Vec::new();
