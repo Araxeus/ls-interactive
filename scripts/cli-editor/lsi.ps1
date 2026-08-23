@@ -5,7 +5,7 @@
 # gedit $profile
 
 function lsi {
-    $output = (ls-interactive -x "$args")
+    $output = (ls-interactive "$args" -x)
     if (!$output) { return }
     if (Test-Path -Path $output -PathType leaf) { micro $output }
     else { Set-Location $output }

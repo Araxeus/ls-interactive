@@ -2,7 +2,7 @@
 :: You can open your environment variables by running "rundll32.exe sysdm.cpl,EditEnvironmentVariables"
 
 @echo off
-for /f "tokens=*" %%i in ('%~dp0\ls-interactive.exe -x "%*"') do set output=%%i
+for /f "tokens=*" %%i in ('%~dp0\ls-interactive.exe "%*" -x') do set output=%%i
 IF DEFINED output CALL :exec %output%
 GOTO :EOF
 
