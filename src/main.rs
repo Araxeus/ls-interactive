@@ -19,7 +19,7 @@ fn main() {
     );
 
     // path = first arg or current dir
-    let mut path = get_first_arg().map_or_else(|| String::from("."), |path| path);
+    let mut path = get_first_arg().unwrap_or_else(|| String::from("."));
 
     if path == "--help" || path == "-h" {
         println!(
@@ -46,7 +46,7 @@ Flags:
     if let Some(index) = no_exec_flags.iter().position(|&flag| path.contains(flag)) {
         no_exec = true;
         let flag = no_exec_flags[index];
-        path = path.replace(flag, "").trim().to_owned();
+        path = path.replace(flag, "").trim().to_string();
         if path.is_empty() {
             path = String::from(".");
         }
