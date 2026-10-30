@@ -15,7 +15,7 @@ pub fn err<S: Display>(msg: S) {
 pub fn resolve_lnk(path: &String) -> String {
     panic::set_hook(Box::new(|_info| {}));
 
-    let link = panic::catch_unwind(|| ShellLink::open(path).unwrap());
+    let link = panic::catch_unwind(|| ShellLink::open(path, ansi_encoding()).unwrap());
 
     mem::drop(panic::take_hook());
 
@@ -26,6 +26,7 @@ pub fn resolve_lnk(path: &String) -> String {
 
     let path_to_open = link
         .unwrap()
+        .string_data()
         .relative_path()
         .as_ref()
         .and_then(|link_target| fs::canonicalize(link_target).ok());
@@ -36,6 +37,28 @@ pub fn resolve_lnk(path: &String) -> String {
     )
 }
 
+// Encoding for non-Unicode .lnk strings: the system's active ANSI code page
+#[cached::proc_macro::once]
+fn ansi_encoding() -> lnk::Encoding {
+    #[cfg(windows)]
+    {
+        let cp = unsafe { windows::Win32::Globalization::GetACP() };
+        match cp {
+            932 => encoding_rs::SHIFT_JIS,
+            936 => encoding_rs::GBK,
+            949 => encoding_rs::EUC_KR,
+            950 => encoding_rs::BIG5,
+            65001 => encoding_rs::UTF_8,
+            _ => encoding_rs::Encoding::for_label(format!("windows-{cp}").as_bytes())
+                .unwrap_or(encoding_rs::WINDOWS_1252),
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        encoding_rs::WINDOWS_1252
+    }
+}
+
 // returns the index of the selected choice
 pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
     Prompt::with_theme(&Theme::default())
@@ -43,7 +66,7 @@ pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
         .items(items)
         .run()
         .unwrap()
-        .map_or_else(|| process::exit(0), |res| res)
+        .unwrap_or_else(|| process::exit(0))
 }
 
 pub fn get_first_arg() -> Option<String> {
