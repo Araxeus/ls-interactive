@@ -41,75 +41,153 @@
 
 2. Extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
 
-3. Follow shell specific instructions:
+3. Choose variation and follow shell specific instructions:
 <details>
-  <summary><bold>Bash (Linux/Mac) or Zsh</bold></summary>
+<summary><bold>Open files with your chosen editor</bold></summary>
 
-* Copy the `lsi` function from [scripts/lsi.sh](https://github.com/Araxeus/ls-interactive/blob/master/scripts/sh) to your `~/.bashrc` or `~/.zshrc` file:
+  <details>
+    <summary><bold>Bash (Linux/Mac) or Zsh</bold></summary>
 
-    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.sh#L3-L8
+  * Copy the `lsi` function from [scripts/lsi.sh](./scripts/cli-editor/lsi.sh) to your `~/.bashrc` or `~/.zshrc` file:
 
+      https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.sh#L3-L8
+
+  </details>
+
+  <details>
+    <summary><bold>Batch (Windows CMD)</bold></summary>
+
+    * Copy [scripts/lsi.bat](./scripts/cli-editor/lsi.bat) into a folder that is in your `%PATH%` environment variable
+
+      https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.bat#L3-L5
+
+      you can open you environment variables settings using the command below: (or by searching for `env` in the start menu)
+
+      ```batch
+      rundll32.exe sysdm.cpl,EditEnvironmentVariables
+      ```
+
+  </details>
+
+  <details>
+    <summary><bold>Fish Shell</bold></summary>
+
+    * Copy [scripts/lsi.fish](./scripts/cli-editor/lsi.fish) into `~/.config/fish/functions/`
+
+      OR copy the function inside into your `~/.config/fish/config.fish` file
+
+      https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.fish#L7-L13
+
+
+  </details>
+  <details>
+    <summary><bold>Powershell</bold></summary>
+
+    * Copy the `lsi` function from [scripts/lsi.ps1](./scripts/cli-editor/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
+
+      https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.ps1#L7-L10
+
+      you can open your profile using one of the following commands:
+
+      ```ps1
+      notepad $profile
+      ```
+      <br>
+
+      ```ps1
+      gedit $profile
+      ```
+
+  </details>
+
+  <details>
+    <summary><bold>Nushell</bold></summary>
+
+    * Copy the `lsi` function from [scripts/lsi.nu](./scripts/cli-editor/lsi.nu) to your `env.nu`
+
+      https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.nu#L4-L10
+
+      you can open your environment file using the following command:
+
+      ```bash
+      config env
+      ```
+
+  </details>
 </details>
 
 <details>
-  <summary><bold>Batch (Windows CMD)</bold></summary>
+<summary><bold>Open files with operating system</bold></summary>
 
-  * Copy [scripts/lsi.bat](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.sh) into a folder that is in your `%PATH%` environment variable
+  <details>
+    <summary><bold>Bash (Linux/Mac) or Zsh</bold></summary>
 
-    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.bat#L3-L5
+  * Copy the `lsi` function from [scripts/lsi.sh](./scripts/lsi.sh) to your `~/.bashrc` or `~/.zshrc` file:
 
-    you can open you environment variables settings using the command below: (or by searching for `env` in the start menu)
+      https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.sh#L3-L8
 
-    ```batch
-    rundll32.exe sysdm.cpl,EditEnvironmentVariables
-    ```
+  </details>
 
-</details>
+  <details>
+    <summary><bold>Batch (Windows CMD)</bold></summary>
 
-<details>
-  <summary><bold>Fish Shell</bold></summary>
+    * Copy [scripts/lsi.bat](./scripts/lsi.bat) into a folder that is in your `%PATH%` environment variable
 
-  * Copy [scripts/lsi.fish](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.fish) into `~/.config/fish/functions/`
+      https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.bat#L3-L5
 
-    OR copy the function inside into your `~/.config/fish/config.fish` file
+      you can open you environment variables settings using the command below: (or by searching for `env` in the start menu)
 
-    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.fish#L7-L13
+      ```batch
+      rundll32.exe sysdm.cpl,EditEnvironmentVariables
+      ```
+
+  </details>
+
+  <details>
+    <summary><bold>Fish Shell</bold></summary>
+
+    * Copy [scripts/lsi.fish](./scripts/lsi.fish) into `~/.config/fish/functions/`
+
+      OR copy the function inside into your `~/.config/fish/config.fish` file
+
+      https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.fish#L7-L13
 
 
-</details>
-<details>
-  <summary><bold>Powershell</bold></summary>
+  </details>
+  <details>
+    <summary><bold>Powershell</bold></summary>
 
-  * Copy the `lsi` function from [scripts/lsi.ps1](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
+    * Copy the `lsi` function from [scripts/lsi.ps1](./scripts/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
 
-    https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.ps1#L7-L10
+      https://github.com/Araxeus/ls-interactive/blob/f1cd2db8a7bddb5aee5e0d3e2482d85b11d76f31/scripts/lsi.ps1#L7-L10
 
-    you can open your profile using one of the following commands:
+      you can open your profile using one of the following commands:
 
-    ```ps1
-    notepad $profile
-    ```
-    <br>
+      ```ps1
+      notepad $profile
+      ```
+      <br>
 
-    ```ps1
-    gedit $profile
-    ```
+      ```ps1
+      gedit $profile
+      ```
 
-</details>
+  </details>
 
-<details>
-  <summary><bold>Nushell</bold></summary>
+  <details>
+    <summary><bold>Nushell</bold></summary>
 
-  * Copy the `lsi` function from [scripts/lsi.nu](https://github.com/Araxeus/ls-interactive/blob/master/scripts/lsi.nu) to your `env.nu`
+    * Copy the `lsi` function from [scripts/lsi.nu](./scripts/lsi.nu) to your `env.nu`
 
-    https://github.com/Araxeus/ls-interactive/blob/edab3551edc1a7e3a18b596166092b13eeffcf2f/scripts/lsi.nu#L4-L10
+      https://github.com/Araxeus/ls-interactive/blob/edab3551edc1a7e3a18b596166092b13eeffcf2f/scripts/lsi.nu#L4-L10
 
-    you can open your environment file using the following command:
+      you can open your environment file using the following command:
 
-    ```bash
-    config env
-    ```
+      ```bash
+      config env
+      ```
 
+  </details>
 </details>
 
 ## 💻 How to run it
@@ -121,12 +199,12 @@ lsi
 or
 
 ```bash
-lsi some_relative_path
+lsi some_relative_or_absolute_path
 ```
 
 ## ⚙️ Build it yourself
 
-(Releases are [automatically](https://github.com/Araxeus/ls-interactive/blob/master/.github/workflows/release.yml) built by github actions)
+(Releases are [automatically](./.github/workflows/release.yml) built by github actions)
 
 -   install `rust`
 -   clone/download the repo
