@@ -89,7 +89,7 @@ impl Theme {
         write!(
             f,
             "{} {}",
-            &self.error_prefix,
+            self.error_prefix,
             self.error_style.apply_to(err)
         )
     }
@@ -105,7 +105,7 @@ impl Theme {
             write!(
                 f,
                 "{} {} ",
-                &self.success_prefix,
+                self.success_prefix,
                 self.prompt_style.apply_to(prompt)
             )?;
         }
@@ -113,7 +113,7 @@ impl Theme {
         write!(
             f,
             "{} {}",
-            &self.success_suffix,
+            self.success_suffix,
             self.values_style.apply_to(sel)
         )
     }
@@ -139,34 +139,47 @@ impl Theme {
             f,
             "{}",
             if active {
-                format!("{} {} ", &self.active_item_prefix, entry.icon,)
+                format!("{} {} ", self.active_item_prefix, entry.icon)
             } else {
-                format!("{} {} ", &self.inactive_item_prefix, entry.icon)
+                format!("{} {} ", self.inactive_item_prefix, entry.icon)
             },
         )?;
 
         if highlight_matches {
             if let Some((_score, indices)) = matcher.fuzzy_indices(&entry.name, search_term) {
-                for (idx, c) in entry.name.chars().enumerate() {
-                    let char;
-
-                    if indices.contains(&idx) && !is_rtl(c) {
-                        if active {
-                            char = format!(
-                                "{}",
-                                self.active_item_style
-                                    .apply_to(self.fuzzy_match_highlight_style.apply_to(c))
-                            );
-                        } else {
-                            char = format!("{}", self.fuzzy_match_highlight_style.apply_to(c));
-                        }
-                    } else if active {
-                        char = format!("{}", self.active_item_style.apply_to(c));
-                    } else {
-                        char = format!("{c}");
+                // Style runs of consecutive chars at once instead of every char separately
+                let mut run = String::new();
+                let mut run_highlighted = false;
+                let mut flush_run = |run: &mut String, highlighted: bool| {
+                    if run.is_empty() {
+                        return;
                     }
-                    output.push_str(&char);
+                    let text = match (highlighted, active) {
+                        (true, true) => format!(
+                            "{}",
+                            self.active_item_style
+                                .apply_to(self.fuzzy_match_highlight_style.apply_to(&*run))
+                        ),
+                        (true, false) => {
+                            format!("{}", self.fuzzy_match_highlight_style.apply_to(&*run))
+                        }
+                        (false, true) => format!("{}", self.active_item_style.apply_to(&*run)),
+                        (false, false) => run.clone(),
+                    };
+                    output.push_str(&text);
+                    run.clear();
+                };
+
+                for (idx, c) in entry.name.chars().enumerate() {
+                    let highlighted = indices.contains(&idx) && !is_rtl(c);
+                    if highlighted != run_highlighted {
+                        flush_run(&mut run, run_highlighted);
+                        run_highlighted = highlighted;
+                    }
+                    run.push(c);
                 }
+                flush_run(&mut run, run_highlighted);
+
                 write!(f, "{}", link_with_label(pretty_path(&entry.path), &output))?;
                 return Ok(());
             }
@@ -192,7 +205,7 @@ impl Theme {
             write!(
                 f,
                 "{} {} ",
-                &self.prompt_prefix,
+                self.prompt_prefix,
                 self.prompt_style.apply_to(link_text)
             )?;
         }
@@ -203,13 +216,13 @@ impl Theme {
             let cursor = self.fuzzy_cursor_style.apply_to(split.1.first().unwrap());
             let tail = split.1[1..].concat();
 
-            write!(f, "{} {head}{cursor}{tail}", &self.prompt_suffix)
+            write!(f, "{} {head}{cursor}{tail}", self.prompt_suffix)
         } else {
             let cursor = self.fuzzy_cursor_style.apply_to(" ");
             write!(
                 f,
                 "{} {}{}",
-                &self.prompt_suffix,
+                self.prompt_suffix,
                 search_term.concat(),
                 cursor
             )
