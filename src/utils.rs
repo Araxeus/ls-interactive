@@ -66,10 +66,10 @@ pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
         .items(items)
         .run()
         .unwrap()
-        .map_or_else(|| process::exit(0), |res| res)
+        .unwrap_or_else(|| process::exit(0))
 }
 
-pub fn get_first_arg()  -> Option<String> {
+pub fn get_first_arg() -> Option<String> {
     env::args().nth(1).and_then(|arg| {
         let arg = arg.trim();
         if arg.is_empty() {

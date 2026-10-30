@@ -19,7 +19,7 @@ fn main() {
     );
 
     // path = first arg or current dir
-    let path = get_first_arg().map_or_else(|| String::from("."), |path| path);
+    let path = get_first_arg().unwrap_or_else(|| String::from("."));
 
     fs::canonicalize(path).map_or_else(
         |_| err("Invalid Path"),
