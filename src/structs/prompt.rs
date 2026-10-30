@@ -4,12 +4,12 @@ use super::{
 };
 use console::Term;
 use crossterm::{
-    event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
+    event::{self, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     terminal,
 };
 
 use fuzzy_matcher::FuzzyMatcher;
-use std::io;
+use std::{io, time::Duration};
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Renders a selection menu that user can fuzzy match to reduce set.
@@ -52,7 +52,14 @@ impl Prompt<'_> {
     /// Result contains `Some(index)` if user hit 'Enter' or `None` if user cancelled with 'Esc' or 'q'.
     #[inline]
     pub fn run(&self) -> io::Result<Option<(usize, KeyModifiers)>> {
-        self.run_internal(&Term::stderr(), true)
+        // Buffering lets a whole frame go out as a single write (one SSH packet instead of
+        // hundreds). Windows consoles move the cursor via the console API, bypassing the buffer.
+        let term = if cfg!(windows) {
+            Term::stderr()
+        } else {
+            Term::buffered_stderr()
+        };
+        self.run_internal(&term, true)
     }
 
     /// Like `interact` but allows a specific terminal to be set.
@@ -66,6 +73,8 @@ impl Prompt<'_> {
         // This cursor iterates over the graphemes vec rather than the search term
         let mut cursor_pos = 0;
         let mut search_term: Vec<String> = Vec::new();
+        // True when more input is already queued, so drawing this frame would be wasted work
+        let mut skip_draw = false;
 
         let mut render = TermRenderer::new(term, self.theme);
         let mut sel = self.default;
@@ -85,6 +94,7 @@ impl Prompt<'_> {
         let mut starting_row = 0;
 
         term.hide_cursor()?;
+        term.flush()?;
 
         loop {
             let concatted_search_term = search_term.concat();
@@ -93,8 +103,10 @@ impl Prompt<'_> {
                 .map(std::string::ToString::to_string)
                 .collect::<Vec<String>>();
 
-            render.clear()?;
-            render.fuzzy_select_prompt(self.title.as_str(), &search_term, cursor_pos)?;
+            if !skip_draw {
+                render.clear()?;
+                render.fuzzy_select_prompt(self.title.as_str(), &search_term, cursor_pos)?;
+            }
 
             // Maps all items to a tuple of item and its match score.
             let mut filtered_list = self
@@ -107,22 +119,24 @@ impl Prompt<'_> {
             // Renders all matching items, from best match to worst.
             filtered_list.sort_unstable_by(|(_, s1), (_, s2)| s2.cmp(s1));
 
-            for (idx, (item, _)) in filtered_list
-                .iter()
-                .enumerate()
-                .skip(starting_row)
-                .take(visible_term_rows)
-            {
-                render.fuzzy_select_prompt_item(
-                    item,
-                    idx == sel,
-                    self.highlight_matches,
-                    &matcher,
-                    &search_term.concat(),
-                )?;
+            if !skip_draw {
+                for (idx, (item, _)) in filtered_list
+                    .iter()
+                    .enumerate()
+                    .skip(starting_row)
+                    .take(visible_term_rows)
+                {
+                    render.fuzzy_select_prompt_item(
+                        item,
+                        idx == sel,
+                        self.highlight_matches,
+                        &matcher,
+                        &search_term.concat(),
+                    )?;
+                }
                 term.flush()?;
             }
-
+            skip_draw = false;
             terminal::enable_raw_mode()?;
 
             if let Event::Key(KeyEvent {
@@ -140,6 +154,7 @@ impl Prompt<'_> {
                         }
                         terminal::disable_raw_mode()?;
                         term.show_cursor()?;
+                        term.flush()?;
                         return Ok(None);
                     }
                     KeyCode::Up | KeyCode::BackTab if !filtered_list.is_empty() => {
@@ -174,6 +189,7 @@ impl Prompt<'_> {
                             terminal::disable_raw_mode()?;
 
                             term.show_cursor()?;
+                            term.flush()?;
 
                             return Ok(Some((0, KeyModifiers::NONE)));
                         }
@@ -201,6 +217,7 @@ impl Prompt<'_> {
                             terminal::disable_raw_mode()?;
 
                             term.show_cursor()?;
+                            term.flush()?;
 
                             return Ok(Some((sel_string_pos_in_items, KeyModifiers::NONE)));
                         }
@@ -226,6 +243,7 @@ impl Prompt<'_> {
                         terminal::disable_raw_mode()?;
 
                         term.show_cursor()?;
+                        term.flush()?;
 
                         return Ok(Some((sel_string_pos_in_items, modifiers)));
                     }
@@ -246,6 +264,12 @@ impl Prompt<'_> {
 
                     _ => {}
                 }
+            }
+
+            // Coalesce bursts of input (typing, held arrow keys) into a single redraw
+            if event::poll(Duration::ZERO)? {
+                skip_draw = true;
+                continue;
             }
 
             terminal::disable_raw_mode()?;
