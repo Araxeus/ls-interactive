@@ -21,7 +21,7 @@ impl fmt::Display for Icon {
 pub struct Icons;
 
 impl Icons {
-    pub const EXE: Icon = Icon("💿"); //  📀 💾
+    pub const EXE: Icon = Icon("💿"); //  📀 💿 💾
     pub const TXT: Icon = Icon("📄"); // 📰 📝 📖 📜 📒 📓 📑 🧾 📋 📇
     pub const PIC: Icon = Icon("🖼️"); // 📷 📸 🎨
     pub const VID: Icon = Icon("🎬"); // 🎞️ 📺 📹 📽️ 🎥 📼
@@ -53,7 +53,7 @@ impl Icons {
     pub const GO: Icon = Icon("🐹");
     pub const JAVA: Icon = Icon("☕");
     pub const DOCKER: Icon = Icon("🐳");
-    pub const GIT: Icon = Icon("🌳");
+    pub const GIT_IGNORE: Icon = Icon("🙈");
     pub const LOCK: Icon = Icon("🔒");
     pub const MAKE: Icon = Icon("🔨");
 
@@ -104,7 +104,7 @@ impl Icons {
             Filetype::Go => &Self::GO,
             Filetype::Java => &Self::JAVA,
             Filetype::Docker => &Self::DOCKER,
-            Filetype::Git => &Self::GIT,
+            Filetype::GitIgnore => &Self::GIT_IGNORE,
             Filetype::Lock => &Self::LOCK,
             Filetype::Make => &Self::MAKE,
             Filetype::DriveView => &Self::PC,

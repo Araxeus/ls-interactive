@@ -27,7 +27,7 @@ pub enum Filetype {
     Go,
     Java,
     Docker,
-    Git,
+    GitIgnore,
     Lock,
     Make,
     // other:
@@ -83,7 +83,9 @@ impl Filetype {
             | "compose.yml"
             | "compose.yaml" => Self::Docker,
 
-            ".gitignore" | ".gitattributes" | ".gitmodules" | ".gitkeep" => Self::Git,
+            ".gitignore" => Self::GitIgnore,
+
+            ".gitattributes" | ".gitconfig" | ".gitmodules" => Self::Settings,
 
             "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" => Self::Lock,
 
