@@ -6,18 +6,20 @@ pub use crossterm::event::KeyModifiers;
 
 use lnk::ShellLink;
 
-use std::{env, fmt::Display, fs, mem, panic, process};
+use std::{env, fmt::Display, fs, panic, process};
 
 pub fn err<S: Display>(msg: S) {
     eprintln!("{} {msg}", style("Error:").red().for_stderr());
 }
 
 pub fn resolve_lnk(path: &String) -> String {
+    // Silence the expected panic, then put back the previous hook
+    let previous_hook = panic::take_hook();
     panic::set_hook(Box::new(|_info| {}));
 
     let link = panic::catch_unwind(|| ShellLink::open(path, ansi_encoding()).unwrap());
 
-    mem::drop(panic::take_hook());
+    panic::set_hook(previous_hook);
 
     if link.is_err() {
         err(format!("Failed to read shortcut \"{}\"", pretty_path(path)));
