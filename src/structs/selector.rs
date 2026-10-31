@@ -112,8 +112,7 @@ impl<'a> Selector<'a> {
     pub fn highlights(&self, item: usize) -> Vec<usize> {
         self.matcher
             .fuzzy_indices(&self.items[item].name, &self.pattern)
-            .map(|(_, indices)| indices)
-            .unwrap_or_default()
+            .map_or_default(|(_, indices)| indices)
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> Outcome {
