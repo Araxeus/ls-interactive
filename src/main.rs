@@ -31,10 +31,15 @@ fn main() {
         env!("CARGO_PKG_REPOSITORY"),
     );
 
-    // path = first arg or current dir
-    let mut path = get_first_arg().unwrap_or_else(|| String::from("."));
+    // Flags may appear anywhere. The first other argument is the path.
+    let args: Vec<String> = env::args()
+        .skip(1)
+        .map(|arg| arg.trim().to_owned())
+        .filter(|arg| !arg.is_empty())
+        .collect();
+    let has_flag = |flags: &[&str]| args.iter().any(|arg| flags.contains(&arg.as_str()));
 
-    if path == "--help" || path == "-h" {
+    if has_flag(&["--help", "-h"]) {
         println!(
             "Usage: {} [path] [flags]
 
@@ -48,22 +53,18 @@ Flags:
         return;
     }
 
-    if path == "--version" || path == "-v" {
+    if has_flag(&["--version", "-v"]) {
         println!("{}", env!("CARGO_PKG_VERSION"));
         return;
     }
 
     let no_exec_flags = ["--no-exec", "--noexec", "-x"];
+    let no_exec = has_flag(&no_exec_flags);
 
-    let mut no_exec = false;
-    if let Some(index) = no_exec_flags.iter().position(|&flag| path.contains(flag)) {
-        no_exec = true;
-        let flag = no_exec_flags[index];
-        path = path.replace(flag, "").trim().to_string();
-        if path.is_empty() {
-            path = String::from(".");
-        }
-    }
+    let path = args
+        .iter()
+        .find(|arg| !no_exec_flags.contains(&arg.as_str()))
+        .map_or(".", String::as_str);
 
     fs::canonicalize(path).map_or_else(
         |_| err("Invalid Path"),
@@ -149,17 +150,6 @@ fn choose(ui: &mut Ui, items: &[Entry], path: &str) -> (usize, KeyModifiers) {
 
 fn err<S: Display>(msg: S) {
     eprintln!("{} {msg}", style("Error:").red().for_stderr());
-}
-
-fn get_first_arg() -> Option<String> {
-    env::args().nth(1).and_then(|arg| {
-        let arg = arg.trim();
-        if arg.is_empty() {
-            None
-        } else {
-            Some(arg.to_owned())
-        }
-    })
 }
 
 /// Takes the prompt off the screen so that whatever is printed next starts on a clean line.
