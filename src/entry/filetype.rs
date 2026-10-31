@@ -87,6 +87,9 @@ impl Filetype {
 
             ".gitattributes" | ".gitconfig" | ".gitmodules" | ".mailmap" => Self::Settings,
 
+            ".editorconfig" | ".profile" | ".bash_profile" | ".bash_login" | ".bash_logout"
+            | ".zprofile" | ".zshenv" | ".zlogin" | ".zlogout" => Self::Settings,
+
             ".env" | "id_rsa" | "id_ed25519" | "known_hosts" | "authorized_keys" => Self::Key,
 
             "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" | "go.sum" => Self::Lock,
@@ -100,6 +103,9 @@ impl Filetype {
             _ if name.starts_with("dockerfile.") => Self::Docker,
 
             _ if name.starts_with(".env.") => Self::Key,
+
+            // Dotfile configs like .npmrc, .prettierrc and .bashrc
+            _ if name.starts_with('.') && name.ends_with("rc") => Self::Settings,
 
             _ => return None,
         };
@@ -213,6 +219,22 @@ mod tests {
     }
 
     #[test]
+    fn treats_config_dotfiles_as_settings() {
+        for name in [
+            ".npmrc",
+            ".prettierrc",
+            ".bashrc",
+            ".zshrc",
+            ".editorconfig",
+            ".profile",
+        ] {
+            assert!(file(name) == Filetype::Settings, "{name}");
+        }
+        assert!(file(".prettierrc.json") == Filetype::Settings);
+        assert!(file("src") == Filetype::Text);
+    }
+
+    #[test]
     fn sorts_moved_extensions_into_their_new_types() {
         assert!(file("report.PDF") == Filetype::Document);
         assert!(file("data.csv") == Filetype::Spreadsheet);
@@ -223,7 +245,9 @@ mod tests {
 
     #[test]
     fn groups_every_shell_script_together() {
-        for name in ["lsi.bat", "lsi.cmd", "lsi.ps1", "lsi.sh", "lsi.fish", "lsi.nu"] {
+        for name in [
+            "lsi.bat", "lsi.cmd", "lsi.ps1", "lsi.sh", "lsi.fish", "lsi.nu",
+        ] {
             assert!(file(name) == Filetype::Shell, "{name}");
         }
     }
