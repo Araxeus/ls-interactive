@@ -1,4 +1,4 @@
-use crate::structs::{Entry, Prompt, Theme};
+use crate::structs::{Entry, Ui};
 
 use console::style;
 
@@ -62,13 +62,15 @@ fn ansi_encoding() -> lnk::Encoding {
 }
 
 // returns the index of the selected choice
-pub fn display_choices(items: &[Entry], path: &str) -> (usize, KeyModifiers) {
-    Prompt::with_theme(&Theme::default())
-        .title(pretty_path(path))
-        .items(items)
-        .run()
-        .unwrap()
-        .unwrap_or_else(|| process::exit(0))
+pub fn display_choices(ui: &mut Ui, items: &[Entry], path: &str) -> (usize, KeyModifiers) {
+    match ui.choose(items, pretty_path(path)) {
+        Ok(Some(choice)) => choice,
+        Ok(None) => process::exit(0),
+        Err(error) => {
+            err(format!("Failed to read input: {error}"));
+            process::exit(1)
+        }
+    }
 }
 
 pub fn get_first_arg() -> Option<String> {
@@ -88,10 +90,6 @@ pub fn pretty_path(path: &str) -> &str {
     } else {
         path
     }
-}
-
-pub fn link(path: &str) -> String {
-    link_with_label(path, path)
 }
 
 pub fn link_with_label(path: &str, label: &str) -> String {

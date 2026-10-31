@@ -4,13 +4,20 @@ mod utils;
 
 use std::{fs, path::Path};
 
-use structs::{Entry, Filetype, Icons};
+use structs::{restore_terminal, Entry, Filetype, Icons, Ui};
 use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
 
 use tiny_update_notifier::check_github;
 
 fn main() {
     human_panic::setup_panic!();
+
+    // A panic must not leave the terminal in raw mode with a hidden cursor
+    let report_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        restore_terminal();
+        report_panic(info);
+    }));
 
     check_github(
         env!("CARGO_PKG_VERSION"),
@@ -64,14 +71,18 @@ fn main_loop(initial_path: String, no_exec: bool) {
         ..Default::default()
     };
 
+    // One Ui for the whole session, so each folder is drawn over the previous one
+    let mut ui = Ui::new();
+
     loop {
         let choices = get_choices(&selected_entry);
 
-        let (index, modifier) = display_choices(&choices, &selected_entry.path);
+        let (index, modifier) = display_choices(&mut ui, &choices, &selected_entry.path);
 
         let entry = choices[index].clone();
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
+            finish(&mut ui);
             if index == 0 {
                 print!("{}", pretty_path(&selected_entry.path));
             } else {
@@ -83,26 +94,38 @@ fn main_loop(initial_path: String, no_exec: bool) {
         // exec file
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             if no_exec {
+                finish(&mut ui);
                 print!("{}", pretty_path(&entry.path));
                 break;
             }
-            match open::that(&entry.path) {
-                // quit if file was opened
-                Ok(()) => break,
-                // else display error and open as directory
-                Err(_) => err(format!(
-                    "Failed to open file \"{}\"",
-                    pretty_path(&entry.path)
-                )),
+            let opened = open::that(&entry.path);
+            finish(&mut ui);
+
+            // quit if file was opened, else display error and open as directory
+            if opened.is_ok() {
+                break;
             }
+            err(format!(
+                "Failed to open file \"{}\"",
+                pretty_path(&entry.path)
+            ));
         }
 
         // browse directory by continuing loop with new path
         selected_entry = entry;
 
         if selected_entry.filetype == Filetype::Lnk {
+            // resolve_lnk can print an error, which must not land inside the prompt
+            finish(&mut ui);
             selected_entry.path = resolve_lnk(&selected_entry.path);
         }
+    }
+}
+
+/// Takes the prompt off the screen so that whatever is printed next starts on a clean line.
+fn finish(ui: &mut Ui) {
+    if let Err(error) = ui.finish() {
+        err(format!("Failed to restore the terminal: {error}"));
     }
 }
 
