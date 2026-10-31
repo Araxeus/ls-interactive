@@ -6,12 +6,12 @@
 
 use std::{
     io::{self, Stderr, Write},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crossterm::{
-    event::{self, Event, KeyModifiers},
-    terminal,
+    event::{self, DisableMouseCapture, Event, KeyModifiers, MouseEventKind},
+    execute, terminal,
 };
 
 use super::{
@@ -21,10 +21,15 @@ use super::{
     Entry,
 };
 
-/// The terminal side of the prompt: its size, raw mode and input events.
+/// The terminal side of the prompt: its size, raw mode, the cursor and input events.
 pub trait Backend {
     fn size(&self) -> io::Result<(u16, u16)>;
     fn set_raw_mode(&mut self, enabled: bool) -> io::Result<()>;
+    /// Turns mouse reporting on or off. While it is on, clicks arrive as events instead of being
+    /// handled by the terminal, which would otherwise turn some of them into arrow keys.
+    fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()>;
+    /// The cursor position as (column, row), or `None` if the terminal did not say.
+    fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>>;
     /// Blocks until the next event.
     fn read(&mut self) -> io::Result<Event>;
     /// Whether [`read`](Self::read) would return without waiting.
@@ -47,6 +52,36 @@ impl Backend for Tty {
         }
     }
 
+    fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()> {
+        let mut stderr = io::stderr();
+        if !enabled {
+            return execute!(stderr, DisableMouseCapture);
+        }
+
+        // Windows consoles report the mouse through the console input mode
+        #[cfg(windows)]
+        return execute!(stderr, crossterm::event::EnableMouseCapture);
+
+        // Presses and releases in the SGR format, without the motion reports that would flood a
+        // slow connection
+        #[cfg(not(windows))]
+        {
+            stderr.write_all(b"\x1b[?1000h\x1b[?1006h")?;
+            stderr.flush()
+        }
+    }
+
+    #[cfg(unix)]
+    fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>> {
+        Ok(query_cursor_position(Duration::from_secs(1)))
+    }
+
+    #[cfg(windows)]
+    fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>> {
+        // The console answers directly, no round trip through the terminal
+        crossterm::cursor::position().map(Some)
+    }
+
     fn read(&mut self) -> io::Result<Event> {
         event::read()
     }
@@ -54,6 +89,61 @@ impl Backend for Tty {
     fn has_pending(&mut self) -> io::Result<bool> {
         event::poll(Duration::ZERO)
     }
+}
+
+/// Asks the terminal where the cursor is (`ESC [ 6 n`) and reads the answer, giving up after
+/// `timeout`. Both go through `/dev/tty`, so this works while the shell captures stdout, and
+/// cannot hang when there is no terminal. Over SSH the answer takes one round trip. Raw mode
+/// must be on.
+#[cfg(unix)]
+fn query_cursor_position(timeout: Duration) -> Option<(u16, u16)> {
+    use std::{fs::File, io::Read, os::fd::AsRawFd};
+
+    let mut tty = File::options()
+        .read(true)
+        .write(true)
+        .open("/dev/tty")
+        .ok()?;
+    tty.write_all(b"\x1b[6n").ok()?;
+    tty.flush().ok()?;
+
+    let deadline = Instant::now() + timeout;
+    let mut reply = Vec::new();
+    let mut byte = [0];
+    while reply.len() < 32 {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        let mut poll = libc::pollfd {
+            fd: tty.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let millis = libc::c_int::try_from(remaining.as_millis()).unwrap_or(libc::c_int::MAX);
+        // SAFETY: polls one valid descriptor, owned by `tty` for the whole call
+        if unsafe { libc::poll(&raw mut poll, 1, millis) } <= 0 {
+            return None;
+        }
+        if tty.read(&mut byte).ok()? == 0 {
+            return None;
+        }
+        reply.push(byte[0]);
+        if byte[0] == b'R' {
+            return parse_cursor_reply(&reply);
+        }
+    }
+    None
+}
+
+/// Parses the terminal's answer `ESC [ row ; column R` (counted from 1) into a (column, row)
+/// counted from 0. Anything typed just before the answer is ignored.
+#[cfg(any(unix, test))]
+fn parse_cursor_reply(reply: &[u8]) -> Option<(u16, u16)> {
+    let reply = std::str::from_utf8(reply).ok()?;
+    let start = reply.rfind("\u{1b}[")?;
+    let (row, column) = reply[start + 2..].strip_suffix('R')?.split_once(';')?;
+    Some((
+        column.parse::<u16>().ok()?.checked_sub(1)?,
+        row.parse::<u16>().ok()?.checked_sub(1)?,
+    ))
 }
 
 /// Windows consoles only understand escape sequences once virtual terminal processing is turned
@@ -79,8 +169,9 @@ fn enable_ansi_output() {
 
 /// Puts the terminal back in a usable state. For panic hooks, where the [`Ui`] cannot do it.
 pub fn restore_terminal() {
-    let _ = terminal::disable_raw_mode();
     let mut stderr = io::stderr();
+    let _ = execute!(stderr, DisableMouseCapture);
+    let _ = terminal::disable_raw_mode();
     let _ = stderr.write_all(b"\x1b[?25h");
     let _ = stderr.flush();
 }
@@ -91,6 +182,8 @@ pub struct Ui<W: Write = Stderr, B: Backend = Tty> {
     theme: Theme,
     /// Whether raw mode is on and a region may be on screen
     active: bool,
+    /// Whether the terminal ignored a cursor position query this session
+    cursor_unanswered: bool,
 }
 
 impl Ui {
@@ -110,10 +203,11 @@ impl Default for Ui {
 impl<W: Write, B: Backend> Ui<W, B> {
     pub fn with(out: W, backend: B) -> Self {
         Self {
-            screen: Screen::new(out, 0),
+            screen: Screen::new(out, 0, 0),
             backend,
             theme: Theme::default(),
             active: false,
+            cursor_unanswered: false,
         }
     }
 
@@ -149,18 +243,21 @@ impl<W: Write, B: Backend> Ui<W, B> {
         self.active = false;
 
         let cleared = self.screen.clear();
+        let mouse = self.backend.set_mouse_capture(false);
         let raw_mode = self.backend.set_raw_mode(false);
-        cleared.and(raw_mode)
+        cleared.and(mouse).and(raw_mode)
     }
 
     fn begin(&mut self) -> io::Result<u16> {
         let (cols, rows) = self.backend.size()?;
         if self.active {
-            self.screen.resize(cols);
+            self.screen.resize(cols, rows);
         } else {
             self.backend.set_raw_mode(true)?;
-            self.screen.reset(cols);
+            self.screen.reset(cols, rows);
             self.active = true;
+            self.cursor_unanswered = false;
+            self.backend.set_mouse_capture(true)?;
         }
         Ok(rows)
     }
@@ -177,19 +274,27 @@ impl<W: Write, B: Backend> Ui<W, B> {
             // holding a key down on a slow connection costs one frame per burst, not per key.
             let mut next = Some(self.backend.read()?);
             while let Some(event) = next.take() {
-                match event {
-                    Event::Key(key) => match selector.handle_key(key) {
-                        Outcome::Pending => {}
-                        Outcome::Quit => return Ok(None),
-                        Outcome::Choose { index, modifiers } => {
-                            return Ok(Some((index, modifiers)))
-                        }
-                    },
-                    Event::Resize(cols, rows) => {
-                        self.screen.resize(cols);
-                        selector.set_rows(list_rows(rows));
+                let outcome = match event {
+                    Event::Key(key) => selector.handle_key(key),
+                    Event::Mouse(mouse) => {
+                        let row = if matches!(mouse.kind, MouseEventKind::Down(_)) {
+                            self.list_row(mouse.row)?
+                        } else {
+                            None
+                        };
+                        selector.handle_mouse(mouse, row, Instant::now())
                     }
-                    _ => {}
+                    Event::Resize(cols, rows) => {
+                        self.screen.resize(cols, rows);
+                        selector.set_rows(list_rows(rows));
+                        Outcome::Pending
+                    }
+                    _ => Outcome::Pending,
+                };
+                match outcome {
+                    Outcome::Pending => {}
+                    Outcome::Quit => return Ok(None),
+                    Outcome::Choose { index, modifiers } => return Ok(Some((index, modifiers))),
                 }
 
                 if self.backend.has_pending()? {
@@ -197,6 +302,23 @@ impl<W: Write, B: Backend> Ui<W, B> {
                 }
             }
         }
+    }
+
+    /// The list row shown on screen row `row`. Clicks come in screen rows, but the region only
+    /// knows where it is relative to the cursor, so the first click asks the terminal where the
+    /// cursor is. Starting the prompt never waits for that answer.
+    fn list_row(&mut self, row: u16) -> io::Result<Option<usize>> {
+        if !self.screen.is_anchored() && !self.cursor_unanswered {
+            match self.backend.cursor_position()? {
+                Some((_, cursor_row)) => self.screen.anchor(cursor_row),
+                None => self.cursor_unanswered = true,
+            }
+        }
+        // The prompt is on the first row of the region
+        Ok(self
+            .screen
+            .region_row(row)
+            .and_then(|row| row.checked_sub(1)))
     }
 }
 
@@ -231,7 +353,7 @@ fn frame(theme: &Theme, selector: &Selector, title: &str, width: usize) -> Vec<S
 mod tests {
     use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
-    use crossterm::event::{KeyCode, KeyEvent};
+    use crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEvent};
 
     use super::*;
     use crate::structs::{
@@ -246,6 +368,14 @@ mod tests {
         events: VecDeque<Event>,
         size: (u16, u16),
         raw_mode: Vec<bool>,
+        mouse_capture: Vec<bool>,
+        /// Whether cursor queries get an answer
+        answers: bool,
+        cursor_queries: usize,
+        /// What the terminal showed before the prompt started
+        shell: Vec<u8>,
+        /// Everything the prompt wrote, to answer cursor queries from
+        output: Sink,
     }
 
     #[derive(Clone)]
@@ -259,6 +389,25 @@ mod tests {
         fn set_raw_mode(&mut self, enabled: bool) -> io::Result<()> {
             self.0.borrow_mut().raw_mode.push(enabled);
             Ok(())
+        }
+
+        fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()> {
+            self.0.borrow_mut().mouse_capture.push(enabled);
+            Ok(())
+        }
+
+        fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>> {
+            let mut state = self.0.borrow_mut();
+            state.cursor_queries += 1;
+            if !state.answers {
+                return Ok(None);
+            }
+            let (cols, rows) = state.size;
+            let mut terminal = vt100::Parser::new(nz(rows), nz(cols), 0);
+            terminal.process(&state.shell);
+            terminal.process(&state.output.log());
+            let (row, column) = terminal.screen().cursor_position();
+            Ok(Some((column, row)))
         }
 
         fn read(&mut self) -> io::Result<Event> {
@@ -283,17 +432,25 @@ mod tests {
 
     impl Harness {
         fn new(rows: u16, cols: u16) -> Self {
+            let sink = Sink::default();
             let state = Rc::new(RefCell::new(State {
                 size: (cols, rows),
+                answers: true,
+                output: sink.clone(),
                 ..State::default()
             }));
-            let sink = Sink::default();
             Self {
                 ui: Ui::with(sink.clone(), Scripted(state.clone())),
                 state,
                 sink,
                 parser: vt100::Parser::new(nz(rows), nz(cols), 0),
             }
+        }
+
+        /// Shows `text` before the prompt starts, as the shell would.
+        fn shell(&mut self, text: &[u8]) {
+            self.parser.process(text);
+            self.state.borrow_mut().shell.extend_from_slice(text);
         }
 
         fn queue(&self, events: impl IntoIterator<Item = Event>) {
@@ -601,6 +758,114 @@ mod tests {
         let (result, writes) = term.choose(&items, "/a");
         assert_eq!(result.unwrap(), Some((1, KeyModifiers::NONE)));
         assert_eq!(writes, 1, "Down and the resize arrive together: one frame");
+    }
+
+    fn click(column: u16, row: u16) -> Event {
+        Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column,
+            row,
+            modifiers: KeyModifiers::NONE,
+        })
+    }
+
+    #[test]
+    fn a_click_selects_the_row_under_the_pointer() {
+        let mut term = Harness::new(10, 40);
+        term.shell(b"$ cd\r\n$ lsi\r\n");
+        // the region starts on row 2: the prompt, then a, b and c
+        term.queue([click(4, 5), key(KeyCode::Enter)]);
+        let (result, _) = term.choose(&entries(&["a", "b", "c"]), "/tmp");
+        assert_eq!(result.unwrap(), Some((2, KeyModifiers::NONE)));
+    }
+
+    #[test]
+    fn a_double_click_chooses_the_row() {
+        let mut term = Harness::new(10, 40);
+        term.shell(b"$ lsi\r\n");
+        term.queue([click(4, 3), click(4, 3)]);
+        let (result, _) = term.choose(&entries(&["a", "b", "c"]), "/tmp");
+        assert_eq!(result.unwrap(), Some((1, KeyModifiers::NONE)));
+    }
+
+    #[test]
+    fn clicks_follow_the_region_when_the_shell_scrolled() {
+        let mut term = Harness::new(10, 40);
+        for i in 0..9 {
+            term.shell(format!("sh {i}\r\n").as_bytes());
+        }
+        // the region scrolled up to rows 6..10, the list is on rows 7, 8 and 9
+        term.queue([click(4, 8), click(4, 8)]);
+        let (result, _) = term.choose(&entries(&["a", "b", "c"]), "/tmp");
+        assert_eq!(result.unwrap(), Some((1, KeyModifiers::NONE)));
+    }
+
+    #[test]
+    fn the_cursor_is_asked_for_on_the_first_click_only() {
+        let mut term = Harness::new(10, 40);
+        term.shell(b"$ lsi\r\n");
+        term.queue([key(KeyCode::Down), key(KeyCode::Enter)]);
+        term.choose(&entries(&["a", "b"]), "/a").0.unwrap();
+        assert_eq!(
+            term.state.borrow().cursor_queries,
+            0,
+            "no click, no question"
+        );
+
+        term.queue([click(4, 2), click(4, 3), click(4, 3)]);
+        let (result, _) = term.choose(&entries(&["x", "y"]), "/b");
+        assert_eq!(result.unwrap(), Some((1, KeyModifiers::NONE)));
+        assert_eq!(term.state.borrow().cursor_queries, 1);
+    }
+
+    #[test]
+    fn clicks_do_nothing_when_the_terminal_does_not_answer() {
+        let mut term = Harness::new(10, 40);
+        term.state.borrow_mut().answers = false;
+        term.queue([click(4, 2), click(4, 2), key(KeyCode::Enter)]);
+        let (result, _) = term.choose(&entries(&["a", "b"]), "/tmp");
+        assert_eq!(result.unwrap(), Some((0, KeyModifiers::NONE)));
+        assert_eq!(
+            term.state.borrow().cursor_queries,
+            1,
+            "asked once, not per click"
+        );
+    }
+
+    #[test]
+    fn clicks_on_the_prompt_or_the_shell_are_ignored() {
+        let mut term = Harness::new(10, 40);
+        term.shell(b"$ lsi\r\n");
+        term.queue([click(4, 0), click(4, 1), click(4, 1), key(KeyCode::Enter)]);
+        let (result, _) = term.choose(&entries(&["a", "b"]), "/tmp");
+        assert_eq!(result.unwrap(), Some((0, KeyModifiers::NONE)));
+    }
+
+    #[test]
+    fn the_mouse_is_captured_while_the_prompt_is_open() {
+        let mut term = Harness::new(10, 40);
+        term.queue([key(KeyCode::Enter)]);
+        term.choose(&entries(&["a"]), "/a").0.unwrap();
+        assert_eq!(term.state.borrow().mouse_capture, [true]);
+
+        term.queue([key(KeyCode::Enter)]);
+        term.choose(&entries(&["b"]), "/b").0.unwrap();
+        assert_eq!(
+            term.state.borrow().mouse_capture,
+            [true],
+            "kept between folders"
+        );
+
+        term.ui.finish().unwrap();
+        assert_eq!(term.state.borrow().mouse_capture, [true, false]);
+    }
+
+    #[test]
+    fn cursor_replies_are_parsed() {
+        assert_eq!(parse_cursor_reply(b"\x1b[5;1R"), Some((0, 4)));
+        assert_eq!(parse_cursor_reply(b"typed\x1b[2;3R"), Some((2, 1)));
+        assert_eq!(parse_cursor_reply(b"\x1b[0;1R"), None);
+        assert_eq!(parse_cursor_reply(b"garbage"), None);
     }
 
     #[test]

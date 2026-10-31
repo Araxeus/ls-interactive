@@ -46,6 +46,10 @@ fn move_down(out: &mut String, rows: usize) {
 pub struct Screen<W: Write> {
     out: W,
     width: usize,
+    height: usize,
+    /// The screen row the region starts on, once [`anchor`](Self::anchor) told it. Only clicks
+    /// need it, drawing is relative to the cursor.
+    top: Option<usize>,
     /// What each row of the region currently shows, `None` while it is unknown. The region is
     /// always at least one row: the one the cursor was on when drawing started.
     rows: Vec<Option<String>>,
@@ -59,10 +63,12 @@ pub struct Screen<W: Write> {
 }
 
 impl<W: Write> Screen<W> {
-    pub fn new(out: W, width: u16) -> Self {
+    pub fn new(out: W, width: u16, height: u16) -> Self {
         Self {
             out,
             width: usize::from(width),
+            height: usize::from(height),
+            top: None,
             rows: vec![None],
             cursor_row: 0,
             drawn: false,
@@ -76,8 +82,10 @@ impl<W: Write> Screen<W> {
     }
 
     /// Forgets everything about the screen and starts a new region at the cursor.
-    pub fn reset(&mut self, width: u16) {
+    pub fn reset(&mut self, width: u16, height: u16) {
         self.width = usize::from(width);
+        self.height = usize::from(height);
+        self.top = None;
         self.rows = vec![None];
         self.cursor_row = 0;
         self.drawn = false;
@@ -85,14 +93,37 @@ impl<W: Write> Screen<W> {
         self.repaint = false;
     }
 
-    /// Tells the screen the terminal changed its width. Nothing is written until the next
-    /// [`draw`](Self::draw), which then repaints the region inside the same synchronized update.
-    pub fn resize(&mut self, width: u16) {
-        let width = usize::from(width);
+    /// Tells the screen the terminal changed its size. Nothing is written until the next
+    /// [`draw`](Self::draw), which repaints the region inside the same synchronized update if the
+    /// width changed.
+    pub fn resize(&mut self, width: u16, height: u16) {
+        let (width, height) = (usize::from(width), usize::from(height));
         if width != self.width {
             self.width = width;
             self.repaint = true;
         }
+        // The terminal may have scrolled or rewrapped the region
+        if self.repaint || height != self.height {
+            self.top = None;
+        }
+        self.height = height;
+    }
+
+    /// Tells the screen which screen row the cursor is on, so that it knows where the region is.
+    pub fn anchor(&mut self, cursor_row: u16) {
+        if self.drawn && !self.repaint {
+            self.top = usize::from(cursor_row).checked_sub(self.cursor_row);
+        }
+    }
+
+    pub const fn is_anchored(&self) -> bool {
+        self.top.is_some()
+    }
+
+    /// The row of the region shown on screen row `row`, if the region is anchored and covers it.
+    pub fn region_row(&self, row: u16) -> Option<usize> {
+        let row = usize::from(row).checked_sub(self.top?)?;
+        (row < self.rows.len()).then_some(row)
     }
 
     /// Makes the screen show `lines`, one per row, changing as little as possible.
@@ -204,6 +235,12 @@ impl<W: Write> Screen<W> {
         // A line feed on the last row of the screen scrolls it, which is how the region gets room.
         // Raw mode does not turn it into a carriage return too.
         for _ in self.rows.len()..target {
+            // On the bottom row the line feed scrolls the screen, and the region moves up with it
+            if let Some(top) = self.top {
+                if top + self.cursor_row + 1 >= self.height {
+                    self.top = top.checked_sub(1);
+                }
+            }
             body.push_str("\r\n");
             self.cursor_row += 1;
             self.rows.push(None);
@@ -236,6 +273,7 @@ impl<W: Write> Screen<W> {
         emit(body, Clear(ClearType::FromCursorDown));
         self.rows = vec![None];
         self.cursor_row = 0;
+        self.top = None;
     }
 
     /// How many screen rows are above the cursor once the terminal rewrapped the region to the
@@ -293,7 +331,7 @@ mod tests {
             let sink = Sink::default();
             Self {
                 parser,
-                screen: Screen::new(sink.clone(), cols),
+                screen: Screen::new(sink.clone(), cols, rows),
                 sink,
                 cols,
             }
@@ -594,7 +632,7 @@ mod tests {
 
         term.parser.set_size(nz(10), nz(60));
         term.cols = 60;
-        term.screen.resize(60);
+        term.screen.resize(60, 10);
         let bytes = term.draw(&["title", "a", "b"]);
 
         assert!(bytes.starts_with(BSU));
@@ -609,9 +647,9 @@ mod tests {
         let mut term = Harness::new(10, 40, &["shell"]);
         term.draw(&["title", "a"]);
 
-        term.screen.resize(50);
-        term.screen.resize(45);
-        term.screen.resize(30);
+        term.screen.resize(50, 10);
+        term.screen.resize(45, 10);
+        term.screen.resize(30, 10);
         term.parser.set_size(nz(10), nz(30));
         term.cols = 30;
         let bytes = term.draw(&["title", "a"]);
@@ -624,7 +662,7 @@ mod tests {
     fn resizing_to_the_same_width_is_not_a_repaint() {
         let mut term = Harness::blank(10, 40);
         term.draw(&["a"]);
-        term.screen.resize(40);
+        term.screen.resize(40, 10);
         assert_eq!(term.draw(&["a"]), "");
     }
 
@@ -638,14 +676,14 @@ mod tests {
 
         term.parser.set_size(nz(10), nz(20));
         term.cols = 20;
-        term.screen.resize(20);
+        term.screen.resize(20, 10);
         term.draw(&["title", &name]);
         assert_eq!(term.text()[1], format!("{}…", "n".repeat(18)));
     }
 
     #[test]
     fn repaint_accounts_for_rows_a_narrower_terminal_rewrapped() {
-        let mut screen = Screen::new(Sink::default(), 40);
+        let mut screen = Screen::new(Sink::default(), 40, 10);
         screen.rows = vec![
             Some("title".to_owned()),
             Some("n".repeat(35)),
@@ -676,7 +714,7 @@ mod tests {
     #[test]
     fn resizing_before_the_first_draw_does_not_touch_the_screen() {
         let mut term = Harness::new(10, 40, &["shell"]);
-        term.screen.resize(50);
+        term.screen.resize(50, 10);
         term.draw(&["a"]);
         assert_eq!(term.text()[..2], ["shell", "a"]);
     }
@@ -686,15 +724,63 @@ mod tests {
         let mut term = Harness::new(10, 40, &["shell"]);
         term.draw(&["a", "b"]);
         term.clear();
-        term.screen.reset(40);
+        term.screen.reset(40, 10);
         term.draw(&["c"]);
         assert_eq!(term.text()[..3], ["shell", "c", ""]);
     }
 
     #[test]
+    fn an_anchored_region_maps_screen_rows_to_its_rows() {
+        let mut term = Harness::new(10, 40, &["shell"]);
+        term.draw(&["a", "b", "c"]);
+        assert_eq!(term.screen.region_row(1), None, "not anchored yet");
+
+        let cursor_row = term.parser.screen().cursor_position().0;
+        term.screen.anchor(cursor_row);
+        assert_eq!(term.screen.region_row(0), None);
+        assert_eq!(term.screen.region_row(1), Some(0));
+        assert_eq!(term.screen.region_row(3), Some(2));
+        assert_eq!(term.screen.region_row(4), None);
+    }
+
+    #[test]
+    fn the_anchor_follows_the_region_when_growing_scrolls_the_screen() {
+        let mut term = Harness::new(6, 40, &["s1", "s2", "s3"]);
+        term.draw(&["a"]);
+        let cursor_row = term.parser.screen().cursor_position().0;
+        term.screen.anchor(cursor_row);
+        assert_eq!(term.screen.region_row(3), Some(0));
+
+        // five rows from row 3 need two more than the screen has
+        term.draw(&["a", "b", "c", "d", "e"]);
+        assert_eq!(term.region_top(), 1);
+        assert_eq!(term.screen.region_row(1), Some(0));
+        assert_eq!(term.screen.region_row(5), Some(4));
+    }
+
+    #[test]
+    fn a_resize_forgets_the_anchor() {
+        let mut term = Harness::new(10, 40, &["shell"]);
+        term.draw(&["a", "b"]);
+        let cursor_row = term.parser.screen().cursor_position().0;
+        term.screen.anchor(cursor_row);
+
+        term.screen.resize(40, 10);
+        assert!(term.screen.is_anchored(), "the same size changes nothing");
+        term.screen.resize(40, 12);
+        assert!(!term.screen.is_anchored());
+
+        term.screen.anchor(cursor_row);
+        term.screen.resize(30, 12);
+        assert!(!term.screen.is_anchored());
+        term.screen.anchor(cursor_row);
+        assert!(!term.screen.is_anchored(), "not before the repaint");
+    }
+
+    #[test]
     fn a_tiny_terminal_does_not_panic() {
         for cols in 0..4 {
-            let mut screen = Screen::new(Sink::default(), cols);
+            let mut screen = Screen::new(Sink::default(), cols, 10);
             screen.draw(&["abc".to_owned(), "def".to_owned()]).unwrap();
             screen.clear().unwrap();
         }

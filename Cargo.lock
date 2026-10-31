@@ -1002,6 +1002,7 @@ dependencies = [
  "encoding_rs",
  "fuzzy-matcher",
  "human-panic",
+ "libc",
  "lnk",
  "open",
  "tiny_update_notifier",

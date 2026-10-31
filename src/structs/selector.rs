@@ -1,14 +1,21 @@
 //! Selection state of the prompt: search term, fuzzy filtering, selection and scrolling.
 //!
-//! Nothing in here draws anything, which keeps the key handling easy to test.
+//! Nothing in here draws anything, which keeps the key and mouse handling easy to test.
 
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use std::time::{Duration, Instant};
+
+use crossterm::event::{
+    KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind,
+};
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{Entry, Filetype};
 
-/// What a key press did to the selector.
+/// The longest gap between the two clicks of a double click
+const DOUBLE_CLICK: Duration = Duration::from_millis(500);
+
+/// What a key press or a mouse event did to the selector.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Outcome {
     /// Keep prompting
@@ -47,6 +54,8 @@ pub struct Selector<'a> {
     top: usize,
     /// How many matches fit on screen
     rows: usize,
+    /// The item clicked last and when, to recognize a double click
+    last_click: Option<(usize, Instant)>,
     #[cfg(test)]
     recomputes: usize,
 }
@@ -63,6 +72,7 @@ impl<'a> Selector<'a> {
             selected: 0,
             top: 0,
             rows: rows.max(1),
+            last_click: None,
             #[cfg(test)]
             recomputes: 0,
         };
@@ -110,6 +120,7 @@ impl<'a> Selector<'a> {
         if !matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) {
             return Outcome::Pending;
         }
+        self.last_click = None;
 
         let has_matches = !self.matches.is_empty();
         match key.code {
@@ -157,6 +168,51 @@ impl<'a> Selector<'a> {
             _ => {}
         }
 
+        Outcome::Pending
+    }
+
+    /// Handles a mouse event that happened at `at`. `row` is the list row under the pointer, or
+    /// `None` when it is not over the list.
+    ///
+    /// A click selects the row, a second click on the same row soon after chooses it like Enter.
+    /// The wheel moves the selection like the arrow keys.
+    pub fn handle_mouse(&mut self, mouse: MouseEvent, row: Option<usize>, at: Instant) -> Outcome {
+        let has_matches = !self.matches.is_empty();
+        match mouse.kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                return self.click(row, mouse.modifiers, at);
+            }
+            MouseEventKind::ScrollUp if has_matches => self.step_back(),
+            MouseEventKind::ScrollDown if has_matches => self.step_forward(),
+            _ => {}
+        }
+        Outcome::Pending
+    }
+
+    fn click(&mut self, row: Option<usize>, modifiers: KeyModifiers, at: Instant) -> Outcome {
+        let Some(position) = row
+            .filter(|&row| row < self.rows)
+            .map(|row| self.top + row)
+            .filter(|&position| position < self.matches.len())
+        else {
+            self.last_click = None;
+            return Outcome::Pending;
+        };
+        let item = self.matches[position].0;
+
+        let double = self.last_click.is_some_and(|(last, time)| {
+            last == item && at.saturating_duration_since(time) <= DOUBLE_CLICK
+        });
+        if double {
+            self.last_click = None;
+            return Outcome::Choose {
+                index: item,
+                modifiers,
+            };
+        }
+
+        self.selected = position;
+        self.last_click = Some((item, at));
         Outcome::Pending
     }
 
@@ -632,6 +688,160 @@ mod tests {
         let mut selector = Selector::new(&items, 10);
         type_str(&mut selector, "bd");
         assert_eq!(selector.highlights(0), [1, 3]);
+    }
+
+    fn mouse(kind: MouseEventKind) -> MouseEvent {
+        MouseEvent {
+            kind,
+            column: 3,
+            row: 0,
+            modifiers: KeyModifiers::NONE,
+        }
+    }
+
+    fn click(selector: &mut Selector, row: usize, at: Instant) -> Outcome {
+        selector.handle_mouse(
+            mouse(MouseEventKind::Down(MouseButton::Left)),
+            Some(row),
+            at,
+        )
+    }
+
+    #[test]
+    fn a_click_selects_the_row_under_the_pointer() {
+        let items = files(&["a", "b", "c"]);
+        let mut selector = Selector::new(&items, 10);
+        assert_eq!(click(&mut selector, 2, Instant::now()), Outcome::Pending);
+        assert_eq!(active(&selector), ["c"]);
+    }
+
+    #[test]
+    fn a_click_maps_to_the_scrolled_list() {
+        let items = numbered(10);
+        let mut selector = Selector::new(&items, 3);
+        press(&mut selector, KeyCode::Up);
+        assert_eq!(names(&selector), ["f07", "f08", "f09"]);
+
+        click(&mut selector, 0, Instant::now());
+        assert_eq!(active(&selector), ["f07"]);
+        assert_eq!(names(&selector), ["f07", "f08", "f09"]);
+    }
+
+    #[test]
+    fn a_double_click_chooses_the_item() {
+        let items = files(&["zzz", "target", "other"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        click(&mut selector, 1, start);
+        assert_eq!(
+            click(&mut selector, 1, start + Duration::from_millis(200)),
+            Outcome::Choose {
+                index: 1,
+                modifiers: KeyModifiers::NONE
+            }
+        );
+    }
+
+    #[test]
+    fn a_double_click_keeps_the_modifiers() {
+        let items = files(&["a"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        let mut event = mouse(MouseEventKind::Down(MouseButton::Left));
+        event.modifiers = KeyModifiers::SHIFT;
+        selector.handle_mouse(event, Some(0), start);
+        assert_eq!(
+            selector.handle_mouse(event, Some(0), start),
+            Outcome::Choose {
+                index: 0,
+                modifiers: KeyModifiers::SHIFT
+            }
+        );
+    }
+
+    #[test]
+    fn slow_clicks_are_two_single_clicks() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        click(&mut selector, 1, start);
+        assert_eq!(
+            click(&mut selector, 1, start + Duration::from_millis(800)),
+            Outcome::Pending
+        );
+        // the slow second click starts a new double click
+        assert!(matches!(
+            click(&mut selector, 1, start + Duration::from_millis(1000)),
+            Outcome::Choose { index: 1, .. }
+        ));
+    }
+
+    #[test]
+    fn clicks_on_two_rows_are_not_a_double_click() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        click(&mut selector, 0, start);
+        assert_eq!(click(&mut selector, 1, start), Outcome::Pending);
+        assert_eq!(active(&selector), ["b"]);
+    }
+
+    #[test]
+    fn a_key_between_clicks_breaks_the_double_click() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        click(&mut selector, 0, start);
+        press(&mut selector, KeyCode::Right);
+        assert_eq!(click(&mut selector, 0, start), Outcome::Pending);
+    }
+
+    #[test]
+    fn clicks_outside_the_list_do_nothing() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        press(&mut selector, KeyCode::Down);
+        let start = Instant::now();
+
+        let event = mouse(MouseEventKind::Down(MouseButton::Left));
+        assert_eq!(selector.handle_mouse(event, None, start), Outcome::Pending);
+        // below the last match
+        assert_eq!(click(&mut selector, 5, start), Outcome::Pending);
+        assert_eq!(active(&selector), ["b"]);
+        // and they break a double click
+        click(&mut selector, 0, start);
+        selector.handle_mouse(event, None, start);
+        assert_eq!(click(&mut selector, 0, start), Outcome::Pending);
+    }
+
+    #[test]
+    fn other_buttons_and_releases_do_nothing() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        for kind in [
+            MouseEventKind::Down(MouseButton::Right),
+            MouseEventKind::Up(MouseButton::Left),
+            MouseEventKind::Moved,
+        ] {
+            assert_eq!(
+                selector.handle_mouse(mouse(kind), Some(1), start),
+                Outcome::Pending
+            );
+        }
+        assert_eq!(active(&selector), ["a"]);
+    }
+
+    #[test]
+    fn the_wheel_moves_the_selection() {
+        let items = files(&["a", "b", "c"]);
+        let mut selector = Selector::new(&items, 10);
+        let start = Instant::now();
+        selector.handle_mouse(mouse(MouseEventKind::ScrollDown), None, start);
+        assert_eq!(active(&selector), ["b"]);
+        selector.handle_mouse(mouse(MouseEventKind::ScrollUp), None, start);
+        selector.handle_mouse(mouse(MouseEventKind::ScrollUp), None, start);
+        assert_eq!(active(&selector), ["c"]);
     }
 
     #[test]
