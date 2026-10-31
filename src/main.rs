@@ -1,11 +1,17 @@
 #![allow(clippy::multiple_crate_versions)]
-mod structs;
-mod utils;
+mod entry;
+mod prompt;
+mod render;
+mod system;
 
-use std::{fs, path::Path};
+use std::{env, fmt::Display, fs, path::Path, process};
 
-use structs::{restore_terminal, Entry, Filetype, Icons, Ui};
-use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
+use console::style;
+use crossterm::event::KeyModifiers;
+
+use entry::{shortcut, Entry, Filetype, Icons};
+use prompt::{restore_terminal, Ui};
+use system::pretty_path;
 
 use tiny_update_notifier::check_github;
 
@@ -77,7 +83,7 @@ fn main_loop(initial_path: String, no_exec: bool) {
     loop {
         let choices = get_choices(&selected_entry);
 
-        let (index, modifier) = display_choices(&mut ui, &choices, &selected_entry.path);
+        let (index, modifier) = choose(&mut ui, &choices, &selected_entry.path);
 
         let entry = choices[index].clone();
 
@@ -115,11 +121,45 @@ fn main_loop(initial_path: String, no_exec: bool) {
         selected_entry = entry;
 
         if selected_entry.filetype == Filetype::Lnk {
-            // resolve_lnk can print an error, which must not land inside the prompt
+            // An error must not land inside the prompt
             finish(&mut ui);
-            selected_entry.path = resolve_lnk(&selected_entry.path);
+            match shortcut::resolve(&selected_entry.path) {
+                Some(target) => selected_entry.path = target,
+                None => err(format!(
+                    "Failed to read shortcut \"{}\"",
+                    pretty_path(&selected_entry.path)
+                )),
+            }
         }
     }
+}
+
+/// Lets the user choose one of `items`. Returns its index and the modifiers held. Quitting
+/// exits the program.
+fn choose(ui: &mut Ui, items: &[Entry], path: &str) -> (usize, KeyModifiers) {
+    match ui.choose(items, pretty_path(path)) {
+        Ok(Some(choice)) => choice,
+        Ok(None) => process::exit(0),
+        Err(error) => {
+            err(format!("Failed to read input: {error}"));
+            process::exit(1)
+        }
+    }
+}
+
+fn err<S: Display>(msg: S) {
+    eprintln!("{} {msg}", style("Error:").red().for_stderr());
+}
+
+fn get_first_arg() -> Option<String> {
+    env::args().nth(1).and_then(|arg| {
+        let arg = arg.trim();
+        if arg.is_empty() {
+            None
+        } else {
+            Some(arg.to_owned())
+        }
+    })
 }
 
 /// Takes the prompt off the screen so that whatever is printed next starts on a clean line.
@@ -135,7 +175,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
     #[cfg(windows)]
     // Open Drives View on Windows
     if entry.filetype == Filetype::DriveView {
-        match utils::get_logical_drives() {
+        match system::logical_drives() {
             Ok(drives) => {
                 for drive in drives {
                     result_vector.push(Entry {
@@ -166,7 +206,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
         // .. Open Drives View on Windows
         result_vector.push(Entry {
             name: String::from(".."),
-            path: utils::get_computer_name(),
+            path: system::computer_name(),
             icon: &Icons::PC,
             filetype: Filetype::DriveView,
         });

@@ -204,6 +204,11 @@ pub fn fit(s: &str, max_cols: usize) -> String {
     out
 }
 
+/// `label` as an OSC 8 hyperlink to `target`.
+pub fn hyperlink(target: &str, label: &str) -> String {
+    format!("\u{1b}]8;;{target}\u{1b}\\{label}{LINK_END}")
+}
+
 /// Keeps the end of plain text `s` within `max_cols`, replacing the start with `…` if needed.
 ///
 /// Used for paths, where the last components matter most.
@@ -367,6 +372,13 @@ mod tests {
         assert_eq!(printable("a\u{1b}[31mb\nc"), "a\u{fffd}[31mb\u{fffd}c");
         assert_eq!(printable("a\u{85}b").chars().count(), 3);
         assert_eq!(display_width(&printable("\u{1b}]8;;x\u{7}")), 7);
+    }
+
+    #[test]
+    fn hyperlinks_wrap_the_label() {
+        let link = hyperlink("/a b", "label");
+        assert_eq!(link, "\u{1b}]8;;/a b\u{1b}\\label\u{1b}]8;;\u{1b}\\");
+        assert_eq!(display_width(&link), 5);
     }
 
     #[test]

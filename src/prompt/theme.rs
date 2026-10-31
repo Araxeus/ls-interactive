@@ -1,9 +1,11 @@
 //! Colors, symbols and the layout of the lines of the prompt.
 use console::{style, Style, StyledObject};
 
-use crate::utils::{get_computer_name, link_with_label, pretty_path};
-
-use super::{ansi, Entry};
+use crate::{
+    entry::Entry,
+    render::ansi,
+    system::{computer_name, pretty_path},
+};
 
 /// A colorful theme
 #[allow(dead_code)]
@@ -105,12 +107,12 @@ impl Theme {
 
         let path = ansi::printable(title);
         let label = ansi::tail_fit(&path, budget);
-        let target = if cfg!(windows) && title == get_computer_name() {
+        let target = if cfg!(windows) && title == computer_name() {
             "shell:MyComputerFolder"
         } else {
             &path
         };
-        let title = self.prompt_style.apply_to(link_with_label(target, &label));
+        let title = self.prompt_style.apply_to(ansi::hyperlink(target, &label));
 
         format!("{prefix}{title}{suffix}{term_text}")
     }
@@ -140,7 +142,7 @@ impl Theme {
         };
 
         let label = self.item_label(&ansi::printable(&entry.name), active, highlights);
-        let link = link_with_label(&ansi::printable(pretty_path(&entry.path)), &label);
+        let link = ansi::hyperlink(&ansi::printable(pretty_path(&entry.path)), &label);
 
         format!("{prefix} {} {link}", entry.icon)
     }
@@ -191,7 +193,7 @@ impl Theme {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structs::{Filetype, Icons};
+    use crate::entry::{Filetype, Icons};
 
     fn entry(name: &str) -> Entry {
         Entry {

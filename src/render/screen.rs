@@ -305,7 +305,7 @@ impl<W: Write> Screen<W> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structs::testing::{nz, Sink};
+    use crate::render::testing::{nz, Sink};
 
     const BSU: &str = "\u{1b}[?2026h";
     const ESU: &str = "\u{1b}[?2026l";

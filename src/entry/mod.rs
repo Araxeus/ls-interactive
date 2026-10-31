@@ -1,4 +1,11 @@
-use super::{Filetype, Icon, Icons};
+//! The files and folders the prompt lists.
+
+mod filetype;
+mod icons;
+pub mod shortcut;
+
+pub use filetype::Filetype;
+pub use icons::{Icon, Icons};
 
 use std::{fmt, fs};
 

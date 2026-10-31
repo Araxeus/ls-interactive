@@ -10,7 +10,7 @@ use crossterm::event::{
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::{Entry, Filetype};
+use crate::entry::{Entry, Filetype};
 
 /// The longest gap between the two clicks of a double click
 const DOUBLE_CLICK: Duration = Duration::from_millis(500);
@@ -287,7 +287,7 @@ impl<'a> Selector<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structs::Icons;
+    use crate::entry::Icons;
 
     fn entry(name: &str, filetype: Filetype) -> Entry {
         Entry {
