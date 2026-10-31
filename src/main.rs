@@ -13,8 +13,6 @@ use entry::{shortcut, Entry, Filetype, Icons};
 use prompt::{restore_terminal, Ui};
 use system::pretty_path;
 
-use tiny_update_notifier::check_github;
-
 fn main() {
     human_panic::setup_panic!();
 
@@ -24,12 +22,6 @@ fn main() {
         restore_terminal();
         report_panic(info);
     }));
-
-    check_github(
-        env!("CARGO_PKG_VERSION"),
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_REPOSITORY"),
-    );
 
     // Flags may appear anywhere. The first other argument is the path.
     let args: Vec<String> = env::args()
