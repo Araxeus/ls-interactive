@@ -99,8 +99,7 @@ impl Filetype {
 
     fn from_ext(ext: &str) -> Self {
         match ext {
-            "exe" | "bat" | "ps1" | "msi" | "cmd" | "com" | "pif" | "scr" | "vbs" | "vbe"
-            | "jar" | "app" => Self::Executable,
+            "exe" | "msi" | "com" | "pif" | "scr" | "jar" | "app" => Self::Executable,
 
             "png" | "jpg" | "jpeg" | "gif" | "bmp" | "ico" | "icn" | "webp" | "tiff" | "tif"
             | "svg" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2" | "jpx" => {
@@ -126,7 +125,8 @@ impl Filetype {
 
             "md" | "mdx" | "rst" => Self::Markdown,
 
-            "sh" | "bash" | "zsh" | "fish" => Self::Shell,
+            "sh" | "bash" | "zsh" | "fish" | "nu" | "bat" | "cmd" | "ps1" | "psm1" | "vbs"
+            | "vbe" => Self::Shell,
 
             "iso" | "img" | "dmg" | "vhd" | "vhdx" => Self::DiskImage,
 

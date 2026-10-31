@@ -26,7 +26,8 @@ impl Icons {
     pub const PIC: Icon = Icon("🖼️"); // 📷 📸 🎨
     pub const VID: Icon = Icon("🎬"); // 🎞️ 📺 📹 📽️ 🎥 📼
     pub const MUSIC: Icon = Icon("🎵"); // 🎧 🔊 🎼 ♫ ♬ 📻
-    pub const DIR: Icon = Icon("📁"); // 📂
+    pub const DIR: Icon = Icon("📁");
+    pub const PARENT: Icon = Icon("📂");
     pub const LINK: Icon = Icon("🔗"); // 📎 🖇️
     pub const UNKNOWN: Icon = Icon("🚫"); // ❔ ❓ ⬜
     pub const EXPLORER: Icon = Icon("💻"); // 🗂️ 🗃️ 🗄️
