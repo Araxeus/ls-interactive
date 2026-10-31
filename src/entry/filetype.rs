@@ -85,13 +85,21 @@ impl Filetype {
 
             ".gitignore" => Self::GitIgnore,
 
-            ".gitattributes" | ".gitconfig" | ".gitmodules" => Self::Settings,
+            ".gitattributes" | ".gitconfig" | ".gitmodules" | ".mailmap" => Self::Settings,
 
-            "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" => Self::Lock,
+            ".env" | "id_rsa" | "id_ed25519" | "known_hosts" | "authorized_keys" => Self::Key,
 
-            "makefile" | "gnumakefile" => Self::Make,
+            "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" | "go.sum" => Self::Lock,
+
+            "makefile" | "gnumakefile" | "cmakelists.txt" | "justfile" => Self::Make,
+
+            "gemfile" => Self::Ruby,
+
+            "go.mod" => Self::Go,
 
             _ if name.starts_with("dockerfile.") => Self::Docker,
+
+            _ if name.starts_with(".env.") => Self::Key,
 
             _ => return None,
         };
@@ -104,9 +112,8 @@ impl Filetype {
             "exe" | "msi" | "com" | "pif" | "scr" | "jar" | "app" => Self::Executable,
 
             "png" | "jpg" | "jpeg" | "gif" | "bmp" | "ico" | "icn" | "webp" | "tiff" | "tif"
-            | "svg" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2" | "jpx" => {
-                Self::Picture
-            }
+            | "svg" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2" | "jpx"
+            | "heic" | "cr2" | "nef" | "dng" => Self::Picture,
 
             "mp4" | "avi" | "mkv" | "webm" | "amc" | "vp6" | "mpeg" | "mpeg-2" | "wmv" | "m4u"
             | "264" | "ivr" | "media" | "mp5" | "flv" | "f4v" | "swf" | "video" | "ogv" | "av1"
@@ -114,27 +121,31 @@ impl Filetype {
             | "vob" => Self::Video,
 
             "mp3" | "wav" | "wave" | "ogg" | "flac" | "aac" | "m4a" | "wma" | "mka" | "m3u"
-            | "pls" | "m3u8" | "aif" | "aiff" | "mid" | "ac3" | "opus" | "pcm" | "alac"
-            | "weba" => Self::Audio,
+            | "pls" | "m3u8" | "aif" | "aiff" | "mid" | "midi" | "ac3" | "opus" | "pcm"
+            | "alac" | "weba" => Self::Audio,
 
             "lnk" => Self::Lnk,
 
-            "zip" | "tar" | "gz" | "tgz" | "bz2" | "xz" | "zst" | "7z" | "rar" => Self::Archive,
+            "zip" | "tar" | "gz" | "tgz" | "bz2" | "xz" | "zst" | "7z" | "rar" | "lz" | "lzma"
+            | "cab" | "deb" | "rpm" | "whl" | "crate" | "nupkg" => Self::Archive,
 
-            "pdf" | "doc" | "docx" | "odt" | "rtf" | "epub" => Self::Document,
+            "pdf" | "doc" | "docx" | "odt" | "rtf" | "epub" | "ppt" | "pptx" | "odp" => {
+                Self::Document
+            }
 
             "xls" | "xlsx" | "ods" | "csv" | "tsv" => Self::Spreadsheet,
 
             "md" | "mdx" | "rst" => Self::Markdown,
 
-            "sh" | "bash" | "zsh" | "fish" | "nu" | "bat" | "cmd" | "ps1" | "psm1" | "vbs"
-            | "vbe" => Self::Shell,
+            "sh" | "bash" | "zsh" | "fish" | "ksh" | "csh" | "command" | "nu" | "bat" | "cmd"
+            | "ps1" | "psm1" | "vbs" | "vbe" => Self::Shell,
 
             "iso" | "img" | "dmg" | "vhd" | "vhdx" => Self::DiskImage,
 
-            "pem" | "key" | "crt" | "cer" | "pub" | "gpg" | "asc" => Self::Key,
+            "pem" | "key" | "crt" | "cer" | "pub" | "gpg" | "asc" | "p12" | "pfx" | "csr"
+            | "der" => Self::Key,
 
-            "ttf" | "otf" | "woff" | "woff2" => Self::Font,
+            "ttf" | "otf" | "woff" | "woff2" | "eot" => Self::Font,
 
             "log" => Self::Log,
 
@@ -143,7 +154,8 @@ impl Filetype {
             "mk" => Self::Make,
 
             // Experimental // TODO
-            "toml" | "ini" | "conf" | "json" | "yaml" | "yml" | "xml" => Self::Settings,
+            "toml" | "ini" | "conf" | "json" | "yaml" | "yml" | "xml" | "jsonc" | "json5"
+            | "cfg" | "properties" => Self::Settings,
 
             "url" | "html" | "htm" => Self::Web,
 
@@ -183,15 +195,21 @@ mod tests {
         assert!(file("package-lock.json") == Filetype::Lock);
         assert!(file("docker-compose.yml") == Filetype::Docker);
         assert!(file("compose.yaml") == Filetype::Docker);
+        assert!(file("CMakeLists.txt") == Filetype::Make);
+        assert!(file("go.sum") == Filetype::Lock);
     }
 
     #[test]
     fn matches_extensionless_and_dotfile_names() {
         assert!(file("Dockerfile") == Filetype::Docker);
         assert!(file("Dockerfile.dev") == Filetype::Docker);
-        assert!(file(".gitignore") == Filetype::Git);
+        assert!(file(".gitignore") == Filetype::GitIgnore);
         assert!(file("Makefile") == Filetype::Make);
         assert!(file("LICENSE") == Filetype::Text);
+        assert!(file(".env") == Filetype::Key);
+        assert!(file(".env.local") == Filetype::Key);
+        assert!(file("id_ed25519") == Filetype::Key);
+        assert!(file("Gemfile") == Filetype::Ruby);
     }
 
     #[test]
@@ -201,5 +219,12 @@ mod tests {
         assert!(file("index.htm") == Filetype::Web);
         assert!(file("app.mjs") == Filetype::Javascript);
         assert!(file("firmware.bin") == Filetype::Text);
+    }
+
+    #[test]
+    fn groups_every_shell_script_together() {
+        for name in ["lsi.bat", "lsi.cmd", "lsi.ps1", "lsi.sh", "lsi.fish", "lsi.nu"] {
+            assert!(file(name) == Filetype::Shell, "{name}");
+        }
     }
 }
