@@ -1,16 +1,29 @@
 #![allow(clippy::multiple_crate_versions)]
-mod structs;
-mod utils;
+mod entry;
+mod prompt;
+mod render;
+mod system;
 
-use std::{fs, path::Path};
+use std::{env, fmt::Display, fs, path::Path, process};
 
-use structs::{Entry, Filetype, Icons};
-use utils::{display_choices, err, get_first_arg, pretty_path, resolve_lnk, KeyModifiers};
+use console::style;
+use crossterm::event::KeyModifiers;
+
+use entry::{shortcut, Entry, Filetype, Icons};
+use prompt::{restore_terminal, Ui};
+use system::pretty_path;
 
 use tiny_update_notifier::check_github;
 
 fn main() {
     human_panic::setup_panic!();
+
+    // A panic must not leave the terminal in raw mode with a hidden cursor
+    let report_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        restore_terminal();
+        report_panic(info);
+    }));
 
     check_github(
         env!("CARGO_PKG_VERSION"),
@@ -64,14 +77,18 @@ fn main_loop(initial_path: String, no_exec: bool) {
         ..Default::default()
     };
 
+    // One Ui for the whole session, so each folder is drawn over the previous one
+    let mut ui = Ui::new();
+
     loop {
         let choices = get_choices(&selected_entry);
 
-        let (index, modifier) = display_choices(&choices, &selected_entry.path);
+        let (index, modifier) = choose(&mut ui, &choices, &selected_entry.path);
 
         let entry = choices[index].clone();
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
+            finish(&mut ui);
             if index == 0 {
                 print!("{}", pretty_path(&selected_entry.path));
             } else {
@@ -83,26 +100,72 @@ fn main_loop(initial_path: String, no_exec: bool) {
         // exec file
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             if no_exec {
+                finish(&mut ui);
                 print!("{}", pretty_path(&entry.path));
                 break;
             }
-            match open::that(&entry.path) {
-                // quit if file was opened
-                Ok(()) => break,
-                // else display error and open as directory
-                Err(_) => err(format!(
-                    "Failed to open file \"{}\"",
-                    pretty_path(&entry.path)
-                )),
+            let opened = open::that(&entry.path);
+            finish(&mut ui);
+
+            // quit if file was opened, else display error and open as directory
+            if opened.is_ok() {
+                break;
             }
+            err(format!(
+                "Failed to open file \"{}\"",
+                pretty_path(&entry.path)
+            ));
         }
 
         // browse directory by continuing loop with new path
         selected_entry = entry;
 
         if selected_entry.filetype == Filetype::Lnk {
-            selected_entry.path = resolve_lnk(&selected_entry.path);
+            // An error must not land inside the prompt
+            finish(&mut ui);
+            match shortcut::resolve(&selected_entry.path) {
+                Some(target) => selected_entry.path = target,
+                None => err(format!(
+                    "Failed to read shortcut \"{}\"",
+                    pretty_path(&selected_entry.path)
+                )),
+            }
         }
+    }
+}
+
+/// Lets the user choose one of `items`. Returns its index and the modifiers held. Quitting
+/// exits the program.
+fn choose(ui: &mut Ui, items: &[Entry], path: &str) -> (usize, KeyModifiers) {
+    match ui.choose(items, pretty_path(path)) {
+        Ok(Some(choice)) => choice,
+        Ok(None) => process::exit(0),
+        Err(error) => {
+            err(format!("Failed to read input: {error}"));
+            process::exit(1)
+        }
+    }
+}
+
+fn err<S: Display>(msg: S) {
+    eprintln!("{} {msg}", style("Error:").red().for_stderr());
+}
+
+fn get_first_arg() -> Option<String> {
+    env::args().nth(1).and_then(|arg| {
+        let arg = arg.trim();
+        if arg.is_empty() {
+            None
+        } else {
+            Some(arg.to_owned())
+        }
+    })
+}
+
+/// Takes the prompt off the screen so that whatever is printed next starts on a clean line.
+fn finish(ui: &mut Ui) {
+    if let Err(error) = ui.finish() {
+        err(format!("Failed to restore the terminal: {error}"));
     }
 }
 
@@ -112,7 +175,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
     #[cfg(windows)]
     // Open Drives View on Windows
     if entry.filetype == Filetype::DriveView {
-        match utils::get_logical_drives() {
+        match system::logical_drives() {
             Ok(drives) => {
                 for drive in drives {
                     result_vector.push(Entry {
@@ -143,7 +206,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
         // .. Open Drives View on Windows
         result_vector.push(Entry {
             name: String::from(".."),
-            path: utils::get_computer_name(),
+            path: system::computer_name(),
             icon: &Icons::PC,
             filetype: Filetype::DriveView,
         });
