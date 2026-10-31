@@ -85,20 +85,23 @@ impl Filetype {
 
             ".gitignore" => Self::GitIgnore,
 
-            ".gitattributes" | ".gitconfig" | ".gitmodules" | ".mailmap" => Self::Settings,
+            ".gitattributes" | ".gitconfig" | ".gitmodules" | ".mailmap" | ".editorconfig"
+            | ".profile" | ".bash_profile" | ".bash_login" | ".bash_logout" | ".zprofile"
+            | ".zshenv" | ".zlogin" | ".zlogout" | "config" => Self::Settings,
 
-            ".editorconfig" | ".profile" | ".bash_profile" | ".bash_login" | ".bash_logout"
-            | ".zprofile" | ".zshenv" | ".zlogin" | ".zlogout" => Self::Settings,
-
-            ".env" | "id_rsa" | "id_ed25519" | "known_hosts" | "authorized_keys" => Self::Key,
+            ".env" | "id_rsa" | "id_ed25519" | "id_ecdsa" | "id_dsa" | "id_ecdsa_sk"
+            | "id_ed25519_sk" | ".netrc" | ".pgpass" | ".htpasswd" | "credentials"
+            | ".git-credentials" | "known_hosts" | "authorized_keys" => Self::Key,
 
             "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" | "go.sum" => Self::Lock,
 
             "makefile" | "gnumakefile" | "cmakelists.txt" | "justfile" => Self::Make,
 
-            "gemfile" => Self::Ruby,
+            "gemfile" | "rakefile" => Self::Ruby,
 
-            "go.mod" => Self::Go,
+            "pipfile" => Self::Python,
+
+            "go.mod" | "go.work" => Self::Go,
 
             _ if name.starts_with("dockerfile.") => Self::Docker,
 
@@ -115,11 +118,11 @@ impl Filetype {
 
     fn from_ext(ext: &str) -> Self {
         match ext {
-            "exe" | "msi" | "com" | "pif" | "scr" | "jar" | "app" => Self::Executable,
+            "exe" | "msi" | "com" | "pif" | "scr" | "jar" | "app" | "appimage" => Self::Executable,
 
             "png" | "jpg" | "jpeg" | "gif" | "bmp" | "ico" | "icn" | "webp" | "tiff" | "tif"
             | "svg" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2" | "jpx"
-            | "heic" | "cr2" | "nef" | "dng" => Self::Picture,
+            | "jfif" | "heic" | "cr2" | "nef" | "dng" => Self::Picture,
 
             "mp4" | "avi" | "mkv" | "webm" | "amc" | "vp6" | "mpeg" | "mpeg-2" | "wmv" | "m4u"
             | "264" | "ivr" | "media" | "mp5" | "flv" | "f4v" | "swf" | "video" | "ogv" | "av1"
@@ -141,7 +144,7 @@ impl Filetype {
 
             "xls" | "xlsx" | "ods" | "csv" | "tsv" => Self::Spreadsheet,
 
-            "md" | "mdx" | "rst" => Self::Markdown,
+            "md" | "markdown" | "mdx" | "rst" => Self::Markdown,
 
             "sh" | "bash" | "zsh" | "fish" | "ksh" | "csh" | "command" | "nu" | "bat" | "cmd"
             | "ps1" | "psm1" | "vbs" | "vbe" => Self::Shell,
@@ -149,7 +152,7 @@ impl Filetype {
             "iso" | "img" | "dmg" | "vhd" | "vhdx" => Self::DiskImage,
 
             "pem" | "key" | "crt" | "cer" | "pub" | "gpg" | "asc" | "p12" | "pfx" | "csr"
-            | "der" => Self::Key,
+            | "der" | "ppk" | "jks" | "keystore" => Self::Key,
 
             "ttf" | "otf" | "woff" | "woff2" | "eot" => Self::Font,
 
@@ -177,7 +180,7 @@ impl Filetype {
 
             "go" => Self::Go,
 
-            "java" | "class" | "kt" => Self::Java,
+            "java" | "class" | "kt" | "kts" | "gradle" => Self::Java,
 
             "css" | "scss" => Self::Css,
 
@@ -215,6 +218,14 @@ mod tests {
         assert!(file(".env") == Filetype::Key);
         assert!(file(".env.local") == Filetype::Key);
         assert!(file("id_ed25519") == Filetype::Key);
+        assert!(file("server.ppk") == Filetype::Key);
+        assert!(file(".netrc") == Filetype::Key);
+        assert!(file(".aws/credentials") == Filetype::Key);
+        assert!(file(".git-credentials") == Filetype::Key);
+        assert!(file(".ssh/config") == Filetype::Settings);
+        assert!(file("build.gradle.kts") == Filetype::Java);
+        assert!(file("Rakefile") == Filetype::Ruby);
+        assert!(file("Pipfile") == Filetype::Python);
         assert!(file("Gemfile") == Filetype::Ruby);
     }
 
