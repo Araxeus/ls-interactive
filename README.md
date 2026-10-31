@@ -49,6 +49,8 @@
 
    The Linux builds are statically linked, so they don't depend on your system's libc.
 
+   Releases also include `lsi_<version>_linux.tar.gz`, `lsi_<version>_macos.tar.gz` and `lsi_<version>_windows.zip`. These are copies of the x86_64 Linux, macOS and x86_64 Windows packages above, kept so older download links still work. Prefer the names in the table, because the old names will be removed in a future release.
+
 2. Extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
 
 3. Choose variation and follow shell specific instructions:
