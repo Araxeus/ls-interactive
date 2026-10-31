@@ -10,50 +10,126 @@ env:
 
 jobs:
   release:
-    name: release ${{ matrix.make.name }} (${{ matrix.os }})
+    name: release ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
         include:
-          - os: macos-latest
-            name: macos
-            extension: tar.gz
-            tar_cmd: gtar
-          - os: ubuntu-latest
-            name: linux
-            extension: tar.gz
-            tar_cmd: tar
-          - os: windows-latest
-            name: windows
-            extension: zip
+          - name: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            targets: x86_64-unknown-linux-musl
+            legacy: linux
+          - name: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+            targets: aarch64-unknown-linux-musl
+          - name: universal-apple-darwin
+            os: macos-latest
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+            legacy: macos
+          - name: x86_64-pc-windows-msvc
+            os: windows-latest
+            targets: x86_64-pc-windows-msvc
+            legacy: windows
+          - name: aarch64-pc-windows-msvc
+            os: windows-11-arm
+            targets: aarch64-pc-windows-msvc
+
+    env:
+      NAME: ${{ matrix.name }}
+      LEGACY: ${{ matrix.legacy }}
+      EXT: ${{ contains(matrix.name, 'windows') && 'zip' || 'tar.gz' }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: ${{ matrix.targets }}
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.name }}
+
+      - name: Install musl tools
+        if: contains(matrix.name, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build
-        run: cargo build --release --verbose
+        shell: bash
+        env:
+          TARGETS: ${{ matrix.targets }}
+          RUSTFLAGS: ${{ contains(matrix.name, 'musl') && '-C target-feature=+crt-static' || '' }}
+        run: |
+          for target in ${TARGETS//,/ }; do
+            cargo build --release --verbose --target "$target"
+          done
 
-      - name: Get filename
+      # Mac ships one universal binary that runs on Apple Silicon and Intel
+
+      - name: Stage binary
+        shell: bash
+        run: |
+          mkdir dist
+          case "$NAME" in
+            universal-apple-darwin)
+              lipo -create -output dist/ls-interactive \
+                target/aarch64-apple-darwin/release/ls-interactive \
+                target/x86_64-apple-darwin/release/ls-interactive
+              lipo dist/ls-interactive -verify_arch arm64 x86_64
+              ;;
+            *windows*)
+              cp "target/$NAME/release/ls-interactive.exe" dist/
+              ;;
+            *)
+              cp "target/$NAME/release/ls-interactive" dist/
+              ;;
+          esac
+
+      # Fails if a dependency starts linking a shared C library
+
+      - name: Verify static linking
+        if: contains(matrix.name, 'musl')
+        run: |
+          file dist/ls-interactive
+          file dist/ls-interactive | grep -Eq 'statically linked|static-pie linked'
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          bin=dist/ls-interactive
+          [[ -f $bin.exe ]] && bin=$bin.exe
+          expected=$(grep -m1 '^version' Cargo.toml | cut -d '"' -f2)
+          output=$("$bin" --version)
+          echo "$output"
+          [[ $output == *"$expected"* ]]
+
+      - name: Get filenames
         id: filename
-        shell: sh
-        run: echo "FILENAME=lsi_${GITHUB_REF#refs/tags/}_${{ matrix.name }}.${{ matrix.extension }}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          tag=${GITHUB_REF#refs/tags/}
+          echo "FILENAME=lsi_${tag}_${NAME}.${EXT}" >> "$GITHUB_OUTPUT"
+          [[ -n $LEGACY ]] && echo "LEGACY_FILENAME=lsi_${tag}_${LEGACY}.${EXT}" >> "$GITHUB_OUTPUT"
+          true
 
       - name: Tar (Unix)
-        if: matrix.os != 'windows-latest'
-        run: ${{ matrix.tar_cmd }} cvzf ${{ steps.filename.outputs.FILENAME }} -C scripts lsi.sh -C ../target/release ls-interactive
+        if: runner.os != 'Windows'
+        run: ${{ runner.os == 'macOS' && 'gtar' || 'tar' }} cvzf ${{ steps.filename.outputs.FILENAME }} -C scripts lsi.sh -C ../dist ls-interactive
 
       - name: Zip (Windows)
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path target/release/ls-interactive.exe, scripts/lsi.bat ${{ steps.filename.outputs.FILENAME }} -Force
+        run: Compress-Archive -Path dist/ls-interactive.exe, scripts/lsi.bat ${{ steps.filename.outputs.FILENAME }} -Force
+
+      # Old asset names (linux/macos/windows) keep existing download links working
+
+      - name: Copy to legacy filename
+        if: steps.filename.outputs.LEGACY_FILENAME
+        shell: bash
+        run: cp "${{ steps.filename.outputs.FILENAME }}" "${{ steps.filename.outputs.LEGACY_FILENAME }}"
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.filename.outputs.FILENAME }}
+          files: lsi_*.${{ env.EXT }}
