@@ -21,12 +21,13 @@ impl fmt::Display for Icon {
 pub struct Icons;
 
 impl Icons {
-    pub const EXE: Icon = Icon("💿"); //  📀 💾
+    pub const EXE: Icon = Icon("💿"); //  📀 💿 💾
     pub const TXT: Icon = Icon("📄"); // 📰 📝 📖 📜 📒 📓 📑 🧾 📋 📇
     pub const PIC: Icon = Icon("🖼️"); // 📷 📸 🎨
     pub const VID: Icon = Icon("🎬"); // 🎞️ 📺 📹 📽️ 🎥 📼
     pub const MUSIC: Icon = Icon("🎵"); // 🎧 🔊 🎼 ♫ ♬ 📻
-    pub const DIR: Icon = Icon("📁"); // 📂
+    pub const DIR: Icon = Icon("📁");
+    pub const PARENT: Icon = Icon("📂");
     pub const LINK: Icon = Icon("🔗"); // 📎 🖇️
     pub const UNKNOWN: Icon = Icon("🚫"); // ❔ ❓ ⬜
     pub const EXPLORER: Icon = Icon("💻"); // 🗂️ 🗃️ 🗄️
@@ -38,17 +39,32 @@ impl Icons {
     pub const JS: Icon = Icon("📒"); // 🇯 🐍 "\x1b[30;43m🇯\x1b[0m" = black on yellow
     pub const CSS: Icon = Icon("💄"); // 💅
 
+    pub const ARCHIVE: Icon = Icon("📦");
+    pub const DOCUMENT: Icon = Icon("📕");
+    pub const SPREADSHEET: Icon = Icon("📊");
+    pub const MARKDOWN: Icon = Icon("📝");
+    pub const SHELL: Icon = Icon("📜");
+    pub const TS: Icon = Icon("📘");
+    pub const PYTHON: Icon = Icon("🐍");
+    pub const KEY: Icon = Icon("🔑");
+    pub const FONT: Icon = Icon("🔤");
+    pub const LOG: Icon = Icon("🧾");
+    pub const RUBY: Icon = Icon("💎");
+    pub const GO: Icon = Icon("🐹");
+    pub const JAVA: Icon = Icon("☕");
+    pub const DOCKER: Icon = Icon("🐳");
+    pub const GIT_IGNORE: Icon = Icon("🙈");
+    pub const LOCK: Icon = Icon("🔒");
+    pub const MAKE: Icon = Icon("🔨");
+
     // Windows Only
     pub const PC: Icon = Icon("🖥️");
-    #[allow(dead_code)]
+
+    // Drives on Windows, disk images everywhere
     pub const DRIVE: Icon = Icon("💽");
 
     // TODO
-    // Packages: 📦 (zip, tar, gz, bz2, xz, 7z, rar)
-    // Typescript: 📘
-    // Python:🐍
     // C#: #️⃣
-    // Ruby: 📕 🧧 🩸 🏮 🔶
     // CoffeeScript: 🍵
     // Recycle bin: 🗑️
     // Others: 〽️ 🔰 🛡️ 🧼 ➰ 🧬 🛒
@@ -73,6 +89,24 @@ impl Icons {
             Filetype::Rust => &Self::RUST,
             Filetype::Javascript => &Self::JS,
             Filetype::Css => &Self::CSS,
+            Filetype::Archive => &Self::ARCHIVE,
+            Filetype::Document => &Self::DOCUMENT,
+            Filetype::Spreadsheet => &Self::SPREADSHEET,
+            Filetype::Markdown => &Self::MARKDOWN,
+            Filetype::Shell => &Self::SHELL,
+            Filetype::Typescript => &Self::TS,
+            Filetype::Python => &Self::PYTHON,
+            Filetype::DiskImage => &Self::DRIVE,
+            Filetype::Key => &Self::KEY,
+            Filetype::Font => &Self::FONT,
+            Filetype::Log => &Self::LOG,
+            Filetype::Ruby => &Self::RUBY,
+            Filetype::Go => &Self::GO,
+            Filetype::Java => &Self::JAVA,
+            Filetype::Docker => &Self::DOCKER,
+            Filetype::GitIgnore => &Self::GIT_IGNORE,
+            Filetype::Lock => &Self::LOCK,
+            Filetype::Make => &Self::MAKE,
             Filetype::DriveView => &Self::PC,
             Filetype::Unknown => &Self::UNKNOWN,
         }

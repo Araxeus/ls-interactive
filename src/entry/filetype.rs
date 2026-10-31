@@ -12,6 +12,24 @@ pub enum Filetype {
     Rust,
     Javascript,
     Css,
+    Archive,
+    Document,
+    Spreadsheet,
+    Markdown,
+    Shell,
+    Typescript,
+    Python,
+    DiskImage,
+    Key,
+    Font,
+    Log,
+    Ruby,
+    Go,
+    Java,
+    Docker,
+    GitIgnore,
+    Lock,
+    Make,
     // other:
     Directory,
     Symlink,
@@ -36,13 +54,7 @@ impl Filetype {
 
     pub fn from_native(native: fs::FileType, path: &Path) -> Self {
         if native.is_file() {
-            Self::from_ext(
-                path.extension()
-                    .unwrap_or_default()
-                    .to_ascii_lowercase()
-                    .to_str()
-                    .unwrap_or_default(),
-            )
+            Self::from_file(path)
         } else if native.is_dir() {
             Self::Directory
         } else if native.is_symlink() {
@@ -52,14 +64,65 @@ impl Filetype {
         }
     }
 
+    fn from_file(path: &Path) -> Self {
+        let name = path.file_name().unwrap_or_default().to_ascii_lowercase();
+        let ext = path.extension().unwrap_or_default().to_ascii_lowercase();
+
+        Self::from_name(name.to_str().unwrap_or_default())
+            .unwrap_or_else(|| Self::from_ext(ext.to_str().unwrap_or_default()))
+    }
+
+    // Matches files known by their full name. Expects a lowercase name.
+    fn from_name(name: &str) -> Option<Self> {
+        let filetype = match name {
+            "dockerfile"
+            | "containerfile"
+            | ".dockerignore"
+            | "docker-compose.yml"
+            | "docker-compose.yaml"
+            | "compose.yml"
+            | "compose.yaml" => Self::Docker,
+
+            ".gitignore" => Self::GitIgnore,
+
+            ".gitattributes" | ".gitconfig" | ".gitmodules" | ".mailmap" | ".editorconfig"
+            | ".profile" | ".bash_profile" | ".bash_login" | ".bash_logout" | ".zprofile"
+            | ".zshenv" | ".zlogin" | ".zlogout" | "config" => Self::Settings,
+
+            ".env" | "id_rsa" | "id_ed25519" | "id_ecdsa" | "id_dsa" | "id_ecdsa_sk"
+            | "id_ed25519_sk" | ".netrc" | ".pgpass" | ".htpasswd" | "credentials"
+            | ".git-credentials" | "known_hosts" | "authorized_keys" => Self::Key,
+
+            "package-lock.json" | "pnpm-lock.yaml" | "bun.lockb" | "go.sum" => Self::Lock,
+
+            "makefile" | "gnumakefile" | "cmakelists.txt" | "justfile" => Self::Make,
+
+            "gemfile" | "rakefile" => Self::Ruby,
+
+            "pipfile" => Self::Python,
+
+            "go.mod" | "go.work" => Self::Go,
+
+            _ if name.starts_with("dockerfile.") => Self::Docker,
+
+            _ if name.starts_with(".env.") => Self::Key,
+
+            // Dotfile configs like .npmrc, .prettierrc and .bashrc
+            _ if name.starts_with('.') && name.ends_with("rc") => Self::Settings,
+
+            _ => return None,
+        };
+
+        Some(filetype)
+    }
+
     fn from_ext(ext: &str) -> Self {
         match ext {
-            "exe" | "bat" | "ps1" | "msi" | "cmd" | "com" | "pif" | "scr" | "vbs" | "vbe"
-            | "jar" | "app" | "bin" => Self::Executable,
+            "exe" | "msi" | "com" | "pif" | "scr" | "jar" | "app" | "appimage" => Self::Executable,
 
             "png" | "jpg" | "jpeg" | "gif" | "bmp" | "ico" | "icn" | "webp" | "tiff" | "tif"
-            | "svg" | "pdf" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2"
-            | "jpx" => Self::Picture,
+            | "svg" | "heif" | "psd" | "eps" | "jxl" | "icon" | "flif" | "avif" | "jp2" | "jpx"
+            | "jfif" | "heic" | "cr2" | "nef" | "dng" => Self::Picture,
 
             "mp4" | "avi" | "mkv" | "webm" | "amc" | "vp6" | "mpeg" | "mpeg-2" | "wmv" | "m4u"
             | "264" | "ivr" | "media" | "mp5" | "flv" | "f4v" | "swf" | "video" | "ogv" | "av1"
@@ -67,24 +130,136 @@ impl Filetype {
             | "vob" => Self::Video,
 
             "mp3" | "wav" | "wave" | "ogg" | "flac" | "aac" | "m4a" | "wma" | "mka" | "m3u"
-            | "pls" | "m3u8" | "aif" | "aiff" | "mid" | "ac3" | "opus" | "pcm" | "alac"
-            | "weba" => Self::Audio,
+            | "pls" | "m3u8" | "aif" | "aiff" | "mid" | "midi" | "ac3" | "opus" | "pcm"
+            | "alac" | "weba" => Self::Audio,
 
             "lnk" => Self::Lnk,
 
-            // Experimental // TODO
-            "toml" | "ini" | "conf" | "json" | "yaml" | "yml" | "xml" | "csv" => Self::Settings,
+            "zip" | "tar" | "gz" | "tgz" | "bz2" | "xz" | "zst" | "7z" | "rar" | "lz" | "lzma"
+            | "cab" | "deb" | "rpm" | "whl" | "crate" | "nupkg" => Self::Archive,
 
-            "url" | "html" => Self::Web,
+            "pdf" | "doc" | "docx" | "odt" | "rtf" | "epub" | "ppt" | "pptx" | "odp" => {
+                Self::Document
+            }
+
+            "xls" | "xlsx" | "ods" | "csv" | "tsv" => Self::Spreadsheet,
+
+            "md" | "markdown" | "mdx" | "rst" => Self::Markdown,
+
+            "sh" | "bash" | "zsh" | "fish" | "ksh" | "csh" | "command" | "nu" | "bat" | "cmd"
+            | "ps1" | "psm1" | "vbs" | "vbe" => Self::Shell,
+
+            "iso" | "img" | "dmg" | "vhd" | "vhdx" => Self::DiskImage,
+
+            "pem" | "key" | "crt" | "cer" | "pub" | "gpg" | "asc" | "p12" | "pfx" | "csr"
+            | "der" | "ppk" | "jks" | "keystore" => Self::Key,
+
+            "ttf" | "otf" | "woff" | "woff2" | "eot" => Self::Font,
+
+            "log" => Self::Log,
+
+            "lock" => Self::Lock,
+
+            "mk" => Self::Make,
+
+            // Experimental // TODO
+            "toml" | "ini" | "conf" | "json" | "yaml" | "yml" | "xml" | "jsonc" | "json5"
+            | "cfg" | "properties" => Self::Settings,
+
+            "url" | "html" | "htm" => Self::Web,
 
             "rs" => Self::Rust,
 
-            "js" => Self::Javascript,
+            "js" | "mjs" | "cjs" | "jsx" => Self::Javascript,
+
+            "ts" | "tsx" | "mts" | "cts" => Self::Typescript,
+
+            "py" | "pyi" | "pyw" | "ipynb" => Self::Python,
+
+            "rb" | "gemspec" => Self::Ruby,
+
+            "go" => Self::Go,
+
+            "java" | "class" | "kt" | "kts" | "gradle" => Self::Java,
 
             "css" | "scss" => Self::Css,
 
             // Default
             _ => Self::Text,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(name: &str) -> Filetype {
+        Filetype::from_file(Path::new(name))
+    }
+
+    #[test]
+    fn names_take_precedence_over_extensions() {
+        assert!(file("Cargo.lock") == Filetype::Lock);
+        assert!(file("package-lock.json") == Filetype::Lock);
+        assert!(file("docker-compose.yml") == Filetype::Docker);
+        assert!(file("compose.yaml") == Filetype::Docker);
+        assert!(file("CMakeLists.txt") == Filetype::Make);
+        assert!(file("go.sum") == Filetype::Lock);
+    }
+
+    #[test]
+    fn matches_extensionless_and_dotfile_names() {
+        assert!(file("Dockerfile") == Filetype::Docker);
+        assert!(file("Dockerfile.dev") == Filetype::Docker);
+        assert!(file(".gitignore") == Filetype::GitIgnore);
+        assert!(file("Makefile") == Filetype::Make);
+        assert!(file("LICENSE") == Filetype::Text);
+        assert!(file(".env") == Filetype::Key);
+        assert!(file(".env.local") == Filetype::Key);
+        assert!(file("id_ed25519") == Filetype::Key);
+        assert!(file("server.ppk") == Filetype::Key);
+        assert!(file(".netrc") == Filetype::Key);
+        assert!(file(".aws/credentials") == Filetype::Key);
+        assert!(file(".git-credentials") == Filetype::Key);
+        assert!(file(".ssh/config") == Filetype::Settings);
+        assert!(file("build.gradle.kts") == Filetype::Java);
+        assert!(file("Rakefile") == Filetype::Ruby);
+        assert!(file("Pipfile") == Filetype::Python);
+        assert!(file("Gemfile") == Filetype::Ruby);
+    }
+
+    #[test]
+    fn treats_config_dotfiles_as_settings() {
+        for name in [
+            ".npmrc",
+            ".prettierrc",
+            ".bashrc",
+            ".zshrc",
+            ".editorconfig",
+            ".profile",
+        ] {
+            assert!(file(name) == Filetype::Settings, "{name}");
+        }
+        assert!(file(".prettierrc.json") == Filetype::Settings);
+        assert!(file("src") == Filetype::Text);
+    }
+
+    #[test]
+    fn sorts_moved_extensions_into_their_new_types() {
+        assert!(file("report.PDF") == Filetype::Document);
+        assert!(file("data.csv") == Filetype::Spreadsheet);
+        assert!(file("index.htm") == Filetype::Web);
+        assert!(file("app.mjs") == Filetype::Javascript);
+        assert!(file("firmware.bin") == Filetype::Text);
+    }
+
+    #[test]
+    fn groups_every_shell_script_together() {
+        for name in [
+            "lsi.bat", "lsi.cmd", "lsi.ps1", "lsi.sh", "lsi.fish", "lsi.nu",
+        ] {
+            assert!(file(name) == Filetype::Shell, "{name}");
         }
     }
 }

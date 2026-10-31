@@ -186,7 +186,7 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
         result_vector.push(Entry {
             name: String::from(".."),
             path: parent.to_string_lossy().to_string(),
-            icon: &Icons::DIR,
+            icon: &Icons::PARENT,
             filetype: Filetype::Directory,
         });
     }
