@@ -37,7 +37,17 @@
 
 ## 🛠 Installation
 
-1. Download zip package from [releases page](https://github.com/Araxeus/ls-interactive/releases)
+1. Download the package for your platform from the [releases page](https://github.com/Araxeus/ls-interactive/releases)
+
+   | Platform | Asset |
+   |---|---|
+   | Linux x86_64 (any distro, including Alpine) | `lsi_<version>_x86_64-unknown-linux-musl.tar.gz` |
+   | Linux ARM64 (Raspberry Pi, ARM servers) | `lsi_<version>_aarch64-unknown-linux-musl.tar.gz` |
+   | macOS (Apple Silicon and Intel) | `lsi_<version>_universal-apple-darwin.tar.gz` |
+   | Windows x86_64 | `lsi_<version>_x86_64-pc-windows-msvc.zip` |
+   | Windows ARM64 | `lsi_<version>_aarch64-pc-windows-msvc.zip` |
+
+   The Linux builds are statically linked, so they don't depend on your system's libc.
 
 2. Extract its content into a folder in PATH ([guide](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7))
 
