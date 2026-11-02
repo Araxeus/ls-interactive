@@ -130,6 +130,6 @@ jobs:
         run: cp "${{ steps.filename.outputs.FILENAME }}" "${{ steps.filename.outputs.LEGACY_FILENAME }}"
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: lsi_*.${{ env.EXT }}
