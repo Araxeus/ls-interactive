@@ -6,5 +6,6 @@ def --env lsi [...path: string] {
     if ($output | is-empty) { return }
     if (($output | path type) == 'file') { 
         micro $output # replace with your preferred editor
+        lsi ($output | path dirname)
     } else { cd $output }
 }

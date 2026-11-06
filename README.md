@@ -62,7 +62,7 @@
 
   * Copy the `lsi` function from [scripts/lsi.sh](./scripts/cli-editor/lsi.sh) to your `~/.bashrc` or `~/.zshrc` file:
 
-  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.sh#L3-L12
+  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.sh#L3-L13
 
   </details>
 
@@ -71,7 +71,7 @@
 
   * Copy [scripts/lsi.bat](./scripts/cli-editor/lsi.bat) into a folder that is in your `%PATH%` environment variable
 
-  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.bat#L4-L15
+  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.bat#L4-L18
 
   you can open you environment variables settings using the command below: (or by searching for `env` in the start menu)
 
@@ -88,7 +88,7 @@
 
   OR copy the function inside into your `~/.config/fish/config.fish` file
 
-  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.fish#L6-L15
+  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.fish#L6-L16
 
   </details>
   <details>
@@ -96,7 +96,7 @@
 
   * Copy the `lsi` function from [scripts/lsi.ps1](./scripts/cli-editor/lsi.ps1) to your `Microsoft.PowerShell_profile.ps1`
 
-  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.ps1#L7-L12
+  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.ps1#L7-L15
 
   you can open your profile using one of the following commands:
 
@@ -116,7 +116,7 @@
 
   * Copy the `lsi` function from [scripts/lsi.nu](./scripts/cli-editor/lsi.nu) to your `env.nu`
 
-  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.nu#L4-L10
+  https://github.com/Araxeus/ls-interactive/blob/8104712d75b1a075802365ff6767ff1974d5eb3a/scripts/cli-editor/lsi.nu#L4-L11
 
   you can open your environment file using the following command:
 

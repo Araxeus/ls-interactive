@@ -7,6 +7,9 @@
 function lsi {
     $output = (ls-interactive "$args" -x)
     if (!$output) { return }
-    if (Test-Path -Path $output -PathType leaf) { micro $output }
+    if (Test-Path -Path $output -PathType leaf) { 
+        micro $output
+        lsi (Split-Path $output)
+    }
     else { Set-Location $output }
 }

@@ -8,6 +8,7 @@ function lsi
     if output=(ls-interactive $argv -x); and [ -n "$output" ]
         if test -f "$output"
             micro "$output"
+			lsi (dirname "$output")
         else
             cd "$output"
         end
