@@ -381,7 +381,7 @@ mod tests {
 
         // Down and Enter arrive as one burst, so only the first frame was drawn
         let screen: Vec<_> = term.screen().iter().map(|r| row_text(r)).collect();
-        assert_eq!(screen[0], "? /tmp ›");
+        assert_eq!(screen[0], "» /tmp ›");
         assert_eq!(screen[1], "❯ I alpha");
         assert_eq!(screen[2], "  I beta");
     }
@@ -438,7 +438,7 @@ mod tests {
         }
 
         let screen: Vec<_> = term.screen().iter().map(|r| row_text(r)).collect();
-        assert_eq!(screen[..3], ["? /tmp › be", "❯ I beta", ""]);
+        assert_eq!(screen[..3], ["» /tmp › be", "❯ I beta", ""]);
     }
 
     #[test]
@@ -452,7 +452,7 @@ mod tests {
 
         let lines = frame(&theme, &selector, "/tmp", 40);
         let text: Vec<_> = lines.iter().map(|l| row_text(&ansi::strip(l))).collect();
-        assert_eq!(text, ["? /tmp › be ", "❯ I beta"]);
+        assert_eq!(text, ["» /tmp › be ", "❯ I beta"]);
     }
 
     #[test]
@@ -482,7 +482,7 @@ mod tests {
         assert_eq!(result.unwrap(), Some((0, KeyModifiers::NONE)));
 
         // still drawn, still raw, cursor still hidden: nothing was torn down
-        assert_eq!(row_text(&term.screen()[0]), "? /a ›");
+        assert_eq!(row_text(&term.screen()[0]), "» /a ›");
         assert_eq!(term.raw_mode(), [true]);
         assert!(term.parser.screen().hide_cursor());
 
@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(writes, 1);
 
         let screen: Vec<_> = term.screen().iter().map(|r| row_text(r)).collect();
-        assert_eq!(screen[..4], ["? /a/one ›", "❯ I x", "  I y", "  I z"]);
+        assert_eq!(screen[..4], ["» /a/one ›", "❯ I x", "  I y", "  I z"]);
         assert_eq!(term.raw_mode(), [true], "raw mode stays on between folders");
     }
 
@@ -545,7 +545,7 @@ mod tests {
         term.queue([key(KeyCode::Enter)]);
         term.choose(&entries(&["b"]), "/b").0.unwrap();
         assert_eq!(term.screen()[0], "shell");
-        assert_eq!(row_text(&term.screen()[1]), "? /b ›");
+        assert_eq!(row_text(&term.screen()[1]), "» /b ›");
         assert_eq!(term.raw_mode(), [true, false, true]);
     }
 
