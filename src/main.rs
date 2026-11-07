@@ -11,7 +11,7 @@ use crossterm::event::KeyModifiers;
 
 use entry::{shortcut, Entry, Filetype, Icons};
 use prompt::{restore_terminal, Ui};
-use system::pretty_path;
+use system::{expand_tilde, pretty_path};
 
 fn main() {
     human_panic::setup_panic!();
@@ -58,7 +58,7 @@ Flags:
         .find(|arg| !no_exec_flags.contains(&arg.as_str()))
         .map_or(".", String::as_str);
 
-    fs::canonicalize(path).map_or_else(
+    fs::canonicalize(expand_tilde(path)).map_or_else(
         |_| err("Invalid Path"),
         |path| main_loop(path.to_string_lossy().to_string(), no_exec),
     );
