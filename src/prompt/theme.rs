@@ -59,7 +59,7 @@ impl Default for Theme {
         Self {
             defaults_style: Style::new().for_stderr().cyan(),
             prompt_style: Style::new().for_stderr().bold(),
-            prompt_prefix: style("?".to_string()).for_stderr().yellow(),
+            prompt_prefix: style("»".to_string()).for_stderr().yellow(),
             prompt_suffix: style("›".to_string()).for_stderr().black().bright(),
             success_prefix: style("✔".to_string()).for_stderr().green(),
             success_suffix: style("·".to_string()).for_stderr().black().bright(),
@@ -280,13 +280,13 @@ mod tests {
     fn prompt_line_shows_the_title_and_the_term_with_a_cursor() {
         let theme = Theme::default();
         let line = theme.prompt_line("/home/me", &term("ab"), 2, 80);
-        assert_eq!(plain(&line), "? /home/me › ab ");
+        assert_eq!(plain(&line), "» /home/me › ab ");
 
         let line = theme.prompt_line("/home/me", &term("ab"), 0, 80);
-        assert_eq!(plain(&line), "? /home/me › ab");
+        assert_eq!(plain(&line), "» /home/me › ab");
 
         let line = theme.prompt_line("/home/me", &[], 0, 80);
-        assert_eq!(plain(&line), "? /home/me ›  ");
+        assert_eq!(plain(&line), "» /home/me ›  ");
     }
 
     #[test]
