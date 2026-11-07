@@ -29,7 +29,7 @@
 
 🌟 Top button (📁 ..) opens the parent directory (<kbd>LeftArrow</kbd> can also be used when fuzzy text field is empty)
 
-🌟 Press <kbd>Esc</kbd> to exit
+🌟 Press <kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>C</kbd> or <kbd>Ctrl</kbd>+<kbd>Q</kbd> to exit
 
 > on Linux/Mac <kbd>Shift</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> *might* not work
 >
