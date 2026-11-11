@@ -6,6 +6,10 @@ use std::{
     time::Duration,
 };
 
+#[cfg(unix)]
+use crossterm::event::{
+    KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+};
 use crossterm::{
     event::{self, DisableMouseCapture, Event},
     execute, terminal,
@@ -18,6 +22,10 @@ pub trait Backend {
     /// Turns mouse reporting on or off. While it is on, clicks arrive as events instead of being
     /// handled by the terminal, which would otherwise turn some of them into arrow keys.
     fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()>;
+    /// Turns the kitty keyboard protocol on or off. While it is on, Shift+Enter and Ctrl+Enter
+    /// arrive with their modifier instead of as the bytes of Enter and Ctrl+J. Terminals without
+    /// the protocol ignore the request.
+    fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()>;
     /// The cursor position as (column, row), or `None` if the terminal did not say.
     fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>>;
     /// Blocks until the next event.
@@ -59,6 +67,25 @@ impl Backend for Tty {
             stderr.write_all(b"\x1b[?1000h\x1b[?1006h")?;
             stderr.flush()
         }
+    }
+
+    #[cfg(unix)]
+    fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()> {
+        let mut stderr = io::stderr();
+        if enabled {
+            execute!(
+                stderr,
+                PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)
+            )
+        } else {
+            execute!(stderr, PopKeyboardEnhancementFlags)
+        }
+    }
+
+    #[cfg(windows)]
+    fn set_modified_keys(&mut self, _enabled: bool) -> io::Result<()> {
+        // The console reports every key with its modifiers
+        Ok(())
     }
 
     #[cfg(unix)]
@@ -160,6 +187,8 @@ pub fn enable_ansi_output() {
 /// Puts the terminal back in a usable state. For panic hooks, where the [`Ui`](super::Ui) cannot do it.
 pub fn restore_terminal() {
     let mut stderr = io::stderr();
+    #[cfg(unix)]
+    let _ = execute!(stderr, PopKeyboardEnhancementFlags);
     let _ = execute!(stderr, DisableMouseCapture);
     let _ = terminal::disable_raw_mode();
     let _ = stderr.write_all(b"\x1b[?25h");

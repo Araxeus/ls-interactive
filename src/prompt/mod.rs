@@ -88,9 +88,10 @@ impl<W: Write, B: Backend> Ui<W, B> {
         self.active = false;
 
         let cleared = self.screen.clear();
+        let keys = self.backend.set_modified_keys(false);
         let mouse = self.backend.set_mouse_capture(false);
         let raw_mode = self.backend.set_raw_mode(false);
-        cleared.and(mouse).and(raw_mode)
+        cleared.and(keys).and(mouse).and(raw_mode)
     }
 
     fn begin(&mut self) -> io::Result<u16> {
@@ -103,6 +104,7 @@ impl<W: Write, B: Backend> Ui<W, B> {
             self.active = true;
             self.cursor_unanswered = false;
             self.backend.set_mouse_capture(true)?;
+            self.backend.set_modified_keys(true)?;
         }
         Ok(rows)
     }
@@ -216,6 +218,7 @@ mod tests {
         size: (u16, u16),
         raw_mode: Vec<bool>,
         mouse_capture: Vec<bool>,
+        modified_keys: Vec<bool>,
         /// Whether cursor queries get an answer
         answers: bool,
         cursor_queries: usize,
@@ -240,6 +243,11 @@ mod tests {
 
         fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()> {
             self.0.borrow_mut().mouse_capture.push(enabled);
+            Ok(())
+        }
+
+        fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()> {
+            self.0.borrow_mut().modified_keys.push(enabled);
             Ok(())
         }
 
@@ -705,6 +713,25 @@ mod tests {
 
         term.ui.finish().unwrap();
         assert_eq!(term.state.borrow().mouse_capture, [true, false]);
+    }
+
+    #[test]
+    fn modified_keys_are_reported_while_the_prompt_is_up() {
+        let mut term = Harness::new(10, 40);
+        term.queue([key(KeyCode::Enter)]);
+        term.choose(&entries(&["a"]), "/").0.unwrap();
+        assert_eq!(term.state.borrow().modified_keys, [true]);
+
+        term.queue([key(KeyCode::Enter)]);
+        term.choose(&entries(&["b"]), "/b").0.unwrap();
+        assert_eq!(
+            term.state.borrow().modified_keys,
+            [true],
+            "kept between folders"
+        );
+
+        term.ui.finish().unwrap();
+        assert_eq!(term.state.borrow().modified_keys, [true, false]);
     }
 
     #[test]
