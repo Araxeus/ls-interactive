@@ -7,6 +7,9 @@ use std::{
 };
 
 #[cfg(unix)]
+use std::sync::atomic::{AtomicBool, Ordering};
+
+#[cfg(unix)]
 use crossterm::event::{
     KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
 };
@@ -71,15 +74,7 @@ impl Backend for Tty {
 
     #[cfg(unix)]
     fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()> {
-        let mut stderr = io::stderr();
-        if enabled {
-            execute!(
-                stderr,
-                PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)
-            )
-        } else {
-            execute!(stderr, PopKeyboardEnhancementFlags)
-        }
+        write_modified_keys(&mut io::stderr(), enabled)
     }
 
     #[cfg(windows)]
@@ -163,6 +158,29 @@ fn parse_cursor_reply(reply: &[u8]) -> Option<(u16, u16)> {
     ))
 }
 
+/// Whether this process turned the kitty keyboard protocol on and has not turned it off yet.
+#[cfg(unix)]
+static MODIFIED_KEYS: AtomicBool = AtomicBool::new(false);
+
+/// Writes the request that turns the kitty keyboard protocol on or off, unless it is already in
+/// that state. The terminal keeps the requests on a stack, and both the [`Ui`](super::Ui) and
+/// the panic hook turn the protocol off. A second pop would remove flags the shell had pushed.
+#[cfg(unix)]
+fn write_modified_keys(out: &mut impl Write, enabled: bool) -> io::Result<()> {
+    if MODIFIED_KEYS.swap(enabled, Ordering::Relaxed) == enabled {
+        return Ok(());
+    }
+
+    if enabled {
+        execute!(
+            out,
+            PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)
+        )
+    } else {
+        execute!(out, PopKeyboardEnhancementFlags)
+    }
+}
+
 /// Windows consoles only understand escape sequences once virtual terminal processing is turned
 /// on for the handle that is written to. The prompt draws on stderr, since stdout carries the
 /// result.
@@ -188,7 +206,7 @@ pub fn enable_ansi_output() {
 pub fn restore_terminal() {
     let mut stderr = io::stderr();
     #[cfg(unix)]
-    let _ = execute!(stderr, PopKeyboardEnhancementFlags);
+    let _ = write_modified_keys(&mut stderr, false);
     let _ = execute!(stderr, DisableMouseCapture);
     let _ = terminal::disable_raw_mode();
     let _ = stderr.write_all(b"\x1b[?25h");
@@ -205,5 +223,18 @@ mod tests {
         assert_eq!(parse_cursor_reply(b"typed\x1b[2;3R"), Some((2, 1)));
         assert_eq!(parse_cursor_reply(b"\x1b[0;1R"), None);
         assert_eq!(parse_cursor_reply(b"garbage"), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn modified_keys_are_turned_off_once_and_only_after_being_turned_on() {
+        let mut out = Vec::new();
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"", "nothing was turned on");
+
+        write_modified_keys(&mut out, true).unwrap();
+        write_modified_keys(&mut out, false).unwrap();
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u");
     }
 }
