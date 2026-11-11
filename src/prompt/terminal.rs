@@ -167,7 +167,7 @@ static MODIFIED_KEYS: AtomicBool = AtomicBool::new(false);
 /// the panic hook turn the protocol off. A second pop would remove flags the shell had pushed.
 #[cfg(unix)]
 fn write_modified_keys(out: &mut impl Write, enabled: bool) -> io::Result<()> {
-    if MODIFIED_KEYS.swap(enabled, Ordering::Relaxed) == enabled {
+    if MODIFIED_KEYS.load(Ordering::Relaxed) == enabled {
         return Ok(());
     }
 
@@ -175,10 +175,14 @@ fn write_modified_keys(out: &mut impl Write, enabled: bool) -> io::Result<()> {
         execute!(
             out,
             PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)
-        )
+        )?;
     } else {
-        execute!(out, PopKeyboardEnhancementFlags)
+        execute!(out, PopKeyboardEnhancementFlags)?;
     }
+
+    // Recorded only once the request is written, so a failed write is not taken for a change
+    MODIFIED_KEYS.store(enabled, Ordering::Relaxed);
+    Ok(())
 }
 
 /// Windows consoles only understand escape sequences once virtual terminal processing is turned
@@ -236,5 +240,30 @@ mod tests {
         write_modified_keys(&mut out, false).unwrap();
         write_modified_keys(&mut out, false).unwrap();
         assert_eq!(out, b"\x1b[>1u\x1b[<1u");
+
+        // A request that could not be written is asked again
+        assert!(write_modified_keys(&mut Broken, true).is_err());
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u", "nothing was turned on");
+
+        write_modified_keys(&mut out, true).unwrap();
+        assert!(write_modified_keys(&mut Broken, false).is_err());
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u\x1b[>1u\x1b[<1u");
+    }
+
+    /// A writer that always fails.
+    #[cfg(unix)]
+    struct Broken;
+
+    #[cfg(unix)]
+    impl Write for Broken {
+        fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+            Err(io::Error::other("broken"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
     }
 }

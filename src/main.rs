@@ -102,6 +102,11 @@ fn main_loop(initial_path: String, no_exec: bool) {
                 break;
             }
             err(format!("Failed to open file \"{}\"", pretty_path(target)));
+
+            // The folder being browsed failed to open, so its listing stays up
+            if entry.name == ".." {
+                continue;
+            }
         }
 
         // browse directory by continuing loop with new path
@@ -240,11 +245,11 @@ mod tests {
 
     #[test]
     fn a_modified_enter_on_the_listed_parent_entry_targets_the_folder_being_browsed() {
-        let path = env::temp_dir().to_string_lossy().to_string();
-        let current = folder("", &path);
+        // The folder does not have to exist to be listed with its parent entry
+        let current = folder("missing", "/lsi/missing");
         let choices = get_choices(&current);
         assert_eq!(choices[0].name, "..");
-        assert_eq!(modified_target(&current, &choices[0]), path);
+        assert_eq!(modified_target(&current, &choices[0]), "/lsi/missing");
     }
 
     #[test]
