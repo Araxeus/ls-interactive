@@ -124,6 +124,9 @@ impl<'a> Selector<'a> {
         let has_matches = !self.matches.is_empty();
         match key.code {
             KeyCode::Esc => return Outcome::Quit,
+            KeyCode::Char('c' | 'q') if key.modifiers == KeyModifiers::CONTROL => {
+                return Outcome::Quit;
+            }
             KeyCode::Up | KeyCode::BackTab if has_matches => self.step_back(),
             KeyCode::Down | KeyCode::Tab if has_matches => self.step_forward(),
             KeyCode::Left => {
@@ -526,6 +529,25 @@ mod tests {
         let items = files(&["a"]);
         let mut selector = Selector::new(&items, 10);
         assert_eq!(press(&mut selector, KeyCode::Esc), Outcome::Quit);
+    }
+
+    #[test]
+    fn ctrl_c_and_ctrl_q_quit() {
+        let items = files(&["a"]);
+        let mut selector = Selector::new(&items, 10);
+        for c in ['c', 'q'] {
+            let ctrl = KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL);
+            assert_eq!(selector.handle_key(ctrl), Outcome::Quit);
+        }
+    }
+
+    #[test]
+    fn plain_c_and_q_are_typed() {
+        let items = files(&["cq"]);
+        let mut selector = Selector::new(&items, 10);
+        assert_eq!(press(&mut selector, KeyCode::Char('c')), Outcome::Pending);
+        assert_eq!(press(&mut selector, KeyCode::Char('q')), Outcome::Pending);
+        assert_eq!(names(&selector), ["cq"]);
     }
 
     #[test]
