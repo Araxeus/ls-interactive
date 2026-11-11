@@ -155,6 +155,16 @@ impl<'a> Selector<'a> {
                     modifiers: key.modifiers,
                 };
             }
+            // Ctrl+Enter arrives as a line feed, which reads as Ctrl+J, unless the terminal
+            // reports modified keys
+            KeyCode::Char('j') if key.modifiers == KeyModifiers::CONTROL => {
+                if has_matches {
+                    return Outcome::Choose {
+                        index: self.matches[self.selected].0,
+                        modifiers: KeyModifiers::CONTROL,
+                    };
+                }
+            }
             KeyCode::Backspace if self.cursor > 0 => {
                 self.cursor -= 1;
                 self.term.remove(self.cursor);
@@ -496,6 +506,34 @@ mod tests {
                 modifiers: KeyModifiers::SHIFT
             }
         );
+    }
+
+    #[test]
+    fn ctrl_j_chooses_like_ctrl_enter() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 10);
+        press(&mut selector, KeyCode::Down);
+
+        let line_feed = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::CONTROL);
+        assert_eq!(
+            selector.handle_key(line_feed),
+            Outcome::Choose {
+                index: 1,
+                modifiers: KeyModifiers::CONTROL
+            }
+        );
+        assert_eq!(selector.term(), [] as [String; 0]);
+    }
+
+    #[test]
+    fn ctrl_j_without_matches_does_nothing() {
+        let items = files(&["a"]);
+        let mut selector = Selector::new(&items, 10);
+        type_str(&mut selector, "zzz");
+
+        let line_feed = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::CONTROL);
+        assert_eq!(selector.handle_key(line_feed), Outcome::Pending);
+        assert_eq!(selector.term(), ["z", "z", "z"]);
     }
 
     #[test]

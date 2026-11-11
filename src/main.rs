@@ -79,14 +79,11 @@ fn main_loop(initial_path: String, no_exec: bool) {
         let (index, modifier) = choose(&mut ui, &choices, &selected_entry.path);
 
         let entry = choices[index].clone();
+        let target = modified_target(&selected_entry, &entry);
 
         if modifier == KeyModifiers::SHIFT || modifier == KeyModifiers::ALT {
             finish(&mut ui);
-            if index == 0 {
-                print!("{}", pretty_path(&selected_entry.path));
-            } else {
-                print!("{}", pretty_path(&entry.path));
-            }
+            print!("{}", pretty_path(target));
             break;
         }
 
@@ -94,20 +91,22 @@ fn main_loop(initial_path: String, no_exec: bool) {
         if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
             if no_exec {
                 finish(&mut ui);
-                print!("{}", pretty_path(&entry.path));
+                print!("{}", pretty_path(target));
                 break;
             }
-            let opened = open::that(&entry.path);
+            let opened = open::that(target);
             finish(&mut ui);
 
             // quit if file was opened, else display error and open as directory
             if opened.is_ok() {
                 break;
             }
-            err(format!(
-                "Failed to open file \"{}\"",
-                pretty_path(&entry.path)
-            ));
+            err(format!("Failed to open file \"{}\"", pretty_path(target)));
+
+            // The folder being browsed failed to open, so its listing stays up
+            if entry.name == ".." {
+                continue;
+            }
         }
 
         // browse directory by continuing loop with new path
@@ -124,6 +123,16 @@ fn main_loop(initial_path: String, no_exec: bool) {
                 )),
             }
         }
+    }
+}
+
+/// The path that Enter with a modifier acts on. For the `..` entry that is the folder being
+/// browsed, because its parent is already one plain Enter away.
+fn modified_target<'a>(current: &'a Entry, chosen: &'a Entry) -> &'a str {
+    if chosen.name == ".." {
+        &current.path
+    } else {
+        &chosen.path
     }
 }
 
@@ -212,4 +221,42 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
     }
 
     result_vector
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn folder(name: &str, path: &str) -> Entry {
+        Entry {
+            name: name.to_owned(),
+            path: path.to_owned(),
+            icon: &Icons::PARENT,
+            filetype: Filetype::Directory,
+        }
+    }
+
+    #[test]
+    fn a_modified_enter_on_the_parent_entry_targets_the_folder_being_browsed() {
+        let current = folder("project", "/home/user/project");
+        let parent = folder("..", "/home/user");
+        assert_eq!(modified_target(&current, &parent), "/home/user/project");
+    }
+
+    #[test]
+    fn a_modified_enter_on_the_listed_parent_entry_targets_the_folder_being_browsed() {
+        // The folder does not have to exist to be listed with its parent entry
+        let current = folder("missing", "/lsi/missing");
+        let choices = get_choices(&current);
+        assert_eq!(choices[0].name, "..");
+        assert_eq!(modified_target(&current, &choices[0]), "/lsi/missing");
+    }
+
+    #[test]
+    fn a_modified_enter_on_any_other_entry_targets_that_entry() {
+        // The first entry is not `..` in the root folder and in the drive view
+        let current = folder("", "/");
+        let first = folder("bin", "/bin");
+        assert_eq!(modified_target(&current, &first), "/bin");
+    }
 }
