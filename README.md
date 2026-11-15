@@ -17,7 +17,7 @@
 
 ## ⚡ Features
 
-🌟 Navigate between folders/files using arrow keys
+🌟 Navigate between folders/files using arrow keys, or a page at a time with <kbd>PageUp</kbd> / <kbd>PageDown</kbd>
 
 🌟 Browse folders / Open files with native apps using <kbd>Enter</kbd>
 
