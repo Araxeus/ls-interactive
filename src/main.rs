@@ -87,8 +87,15 @@ fn main_loop(initial_path: String, no_exec: bool) {
             break;
         }
 
+        // A shortcut to a folder browses it. Any other shortcut opens like a file.
+        let shortcut_folder = (entry.filetype == Filetype::Lnk)
+            .then(|| shortcut::folder(&entry.path))
+            .flatten();
+        let opens = entry.filetype.should_exec()
+            || (entry.filetype == Filetype::Lnk && shortcut_folder.is_none());
+
         // exec file
-        if entry.filetype.should_exec() || modifier == KeyModifiers::CONTROL {
+        if opens || modifier == KeyModifiers::CONTROL {
             if no_exec {
                 finish(&mut ui);
                 print!("{}", pretty_path(target));
@@ -111,17 +118,8 @@ fn main_loop(initial_path: String, no_exec: bool) {
 
         // browse directory by continuing loop with new path
         selected_entry = entry;
-
-        if selected_entry.filetype == Filetype::Lnk {
-            // An error must not land inside the prompt
-            finish(&mut ui);
-            match shortcut::resolve(&selected_entry.path) {
-                Some(target) => selected_entry.path = target,
-                None => err(format!(
-                    "Failed to read shortcut \"{}\"",
-                    pretty_path(&selected_entry.path)
-                )),
-            }
+        if let Some(folder) = shortcut_folder {
+            selected_entry.path = folder;
         }
     }
 }

@@ -7,9 +7,9 @@ use std::{
 
 use lnk::ShellLink;
 
-/// Where the shortcut at `path` points. Gives `path` back when the target is missing, and
-/// `None` when the shortcut cannot be read.
-pub fn resolve(path: &str) -> Option<String> {
+/// The folder the shortcut at `path` points to. `None` when the shortcut points to anything
+/// else, or cannot be read.
+pub fn folder(path: &str) -> Option<String> {
     // Silence the expected panic, then put back the previous hook
     let previous_hook = panic::take_hook();
     panic::set_hook(Box::new(|_info| {}));
@@ -19,14 +19,11 @@ pub fn resolve(path: &str) -> Option<String> {
     panic::set_hook(previous_hook);
 
     let folder = Path::new(path).parent().unwrap_or_else(|| Path::new(""));
-    let target = targets(&link.ok()?, folder)
+    targets(&link.ok()?, folder)
         .into_iter()
-        .find_map(|target| fs::canonicalize(target).ok());
-
-    Some(target.map_or_else(
-        || path.to_owned(),
-        |target| target.to_string_lossy().to_string(),
-    ))
+        .find_map(|target| fs::canonicalize(target).ok())
+        .filter(|target| target.is_dir())
+        .map(|target| target.to_string_lossy().to_string())
 }
 
 /// The paths a shortcut in `folder` may point to, most reliable first.
@@ -103,18 +100,41 @@ mod tests {
         bytes
     }
 
-    #[test]
-    fn resolves_a_relative_target_from_the_shortcut_folder() {
-        let folder = std::env::temp_dir().join(format!("lsi-shortcut-{}", std::process::id()));
-        fs::create_dir_all(&folder).unwrap();
-        fs::write(folder.join("target.txt"), "").unwrap();
-        let link = folder.join("link.lnk");
-        fs::write(&link, relative_shortcut(".\\target.txt")).unwrap();
+    /// Makes a fresh folder holding a folder `inner`, a file `file.txt` and the given
+    /// shortcuts, then runs `check` on that folder and removes it.
+    fn with_shortcuts(test: &str, shortcuts: &[(&str, &str)], check: impl FnOnce(&Path)) {
+        let folder = std::env::temp_dir().join(format!("lsi-{test}-{}", std::process::id()));
+        fs::create_dir_all(folder.join("inner")).unwrap();
+        fs::write(folder.join("file.txt"), "").unwrap();
+        for (name, relative) in shortcuts {
+            fs::write(folder.join(name), relative_shortcut(relative)).unwrap();
+        }
 
-        let resolved = resolve(link.to_str().unwrap());
-        let expected = fs::canonicalize(folder.join("target.txt")).unwrap();
+        check(&folder);
         fs::remove_dir_all(&folder).unwrap();
+    }
 
-        assert_eq!(resolved, Some(expected.to_string_lossy().to_string()));
+    fn folder_of(link: &Path) -> Option<String> {
+        self::folder(link.to_str().unwrap())
+    }
+
+    #[test]
+    fn finds_a_relative_folder_from_the_shortcut_folder() {
+        with_shortcuts("relative", &[("inner.lnk", ".\\inner")], |folder| {
+            let expected = fs::canonicalize(folder.join("inner")).unwrap();
+            assert_eq!(
+                folder_of(&folder.join("inner.lnk")),
+                Some(expected.to_string_lossy().to_string())
+            );
+        });
+    }
+
+    #[test]
+    fn finds_no_folder_behind_a_shortcut_to_a_file_or_nothing() {
+        let shortcuts = [("file.lnk", ".\\file.txt"), ("gone.lnk", ".\\gone")];
+        with_shortcuts("not-folders", &shortcuts, |folder| {
+            assert_eq!(folder_of(&folder.join("file.lnk")), None);
+            assert_eq!(folder_of(&folder.join("gone.lnk")), None);
+        });
     }
 }
