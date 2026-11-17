@@ -129,6 +129,8 @@ impl<'a> Selector<'a> {
             }
             KeyCode::Up | KeyCode::BackTab if has_matches => self.step_back(),
             KeyCode::Down | KeyCode::Tab if has_matches => self.step_forward(),
+            KeyCode::PageUp if has_matches => self.page_back(),
+            KeyCode::PageDown if has_matches => self.page_forward(),
             KeyCode::Left => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
@@ -248,6 +250,20 @@ impl<'a> Selector<'a> {
 
     fn step_forward(&mut self) {
         self.selected = (self.selected + 1) % self.matches.len();
+        self.scroll_into_view();
+    }
+
+    /// Moves the viewport and the selection up by one page, stopping at the first match.
+    fn page_back(&mut self) {
+        self.top = self.top.saturating_sub(self.rows);
+        self.selected = self.selected.saturating_sub(self.rows);
+        self.scroll_into_view();
+    }
+
+    /// Moves the viewport and the selection down by one page, stopping at the last match.
+    fn page_forward(&mut self) {
+        self.top += self.rows;
+        self.selected += self.rows;
         self.scroll_into_view();
     }
 
@@ -393,6 +409,50 @@ mod tests {
         press(&mut selector, KeyCode::Up);
         press(&mut selector, KeyCode::Up);
         assert_eq!(names(&selector), ["f00", "f01", "f02"]);
+    }
+
+    #[test]
+    fn page_down_and_up_move_a_whole_page() {
+        let items = numbered(10);
+        let mut selector = Selector::new(&items, 3);
+        press(&mut selector, KeyCode::Down);
+
+        press(&mut selector, KeyCode::PageDown);
+        assert_eq!(names(&selector), ["f03", "f04", "f05"]);
+        assert_eq!(active(&selector), ["f04"]);
+
+        press(&mut selector, KeyCode::PageUp);
+        assert_eq!(names(&selector), ["f00", "f01", "f02"]);
+        assert_eq!(active(&selector), ["f01"]);
+    }
+
+    #[test]
+    fn paging_stops_at_the_ends_without_wrapping() {
+        let items = numbered(10);
+        let mut selector = Selector::new(&items, 3);
+
+        press(&mut selector, KeyCode::PageUp);
+        assert_eq!(names(&selector), ["f00", "f01", "f02"]);
+        assert_eq!(active(&selector), ["f00"]);
+
+        for _ in 0..3 {
+            press(&mut selector, KeyCode::PageDown);
+        }
+        assert_eq!(names(&selector), ["f07", "f08", "f09"]);
+        assert_eq!(active(&selector), ["f09"]);
+
+        press(&mut selector, KeyCode::PageDown);
+        assert_eq!(active(&selector), ["f09"]);
+    }
+
+    #[test]
+    fn paging_with_no_matches_does_nothing() {
+        let items = files(&["a", "b"]);
+        let mut selector = Selector::new(&items, 3);
+        type_str(&mut selector, "zzz");
+        assert_eq!(press(&mut selector, KeyCode::PageDown), Outcome::Pending);
+        assert_eq!(press(&mut selector, KeyCode::PageUp), Outcome::Pending);
+        assert_eq!(names(&selector), Vec::<String>::new());
     }
 
     #[test]
