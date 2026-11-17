@@ -58,7 +58,11 @@ impl Filetype {
         } else if native.is_dir() {
             Self::Directory
         } else if native.is_symlink() {
-            Self::Symlink
+            // A link to a file acts as that file
+            match fs::metadata(path) {
+                Ok(target) if target.is_file() => Self::from_file(path),
+                _ => Self::Symlink,
+            }
         } else {
             Self::Unknown
         }
@@ -252,6 +256,27 @@ mod tests {
         assert!(file("index.htm") == Filetype::Web);
         assert!(file("app.mjs") == Filetype::Javascript);
         assert!(file("firmware.bin") == Filetype::Text);
+    }
+
+    #[test]
+    fn treats_a_link_to_a_file_as_that_file() {
+        let folder = std::env::temp_dir().join(format!("lsi-symlink-{}", std::process::id()));
+        fs::create_dir_all(&folder).unwrap();
+        let target = folder.join("notes.md");
+        fs::write(&target, "").unwrap();
+        let link = folder.join("link.md");
+
+        #[cfg(unix)]
+        let created = std::os::unix::fs::symlink(&target, &link);
+        #[cfg(windows)]
+        let created = std::os::windows::fs::symlink_file(&target, &link);
+
+        // Windows refuses symlinks without admin rights or developer mode
+        if created.is_ok() {
+            let native = fs::symlink_metadata(&link).unwrap().file_type();
+            assert!(Filetype::from_native(native, &link) == Filetype::Markdown);
+        }
+        fs::remove_dir_all(&folder).unwrap();
     }
 
     #[test]
