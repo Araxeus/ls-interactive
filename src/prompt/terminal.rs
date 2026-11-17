@@ -6,6 +6,13 @@ use std::{
     time::Duration,
 };
 
+#[cfg(unix)]
+use std::sync::atomic::{AtomicBool, Ordering};
+
+#[cfg(unix)]
+use crossterm::event::{
+    KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+};
 use crossterm::{
     event::{self, DisableMouseCapture, Event},
     execute, terminal,
@@ -18,6 +25,10 @@ pub trait Backend {
     /// Turns mouse reporting on or off. While it is on, clicks arrive as events instead of being
     /// handled by the terminal, which would otherwise turn some of them into arrow keys.
     fn set_mouse_capture(&mut self, enabled: bool) -> io::Result<()>;
+    /// Turns the kitty keyboard protocol on or off. While it is on, Shift+Enter and Ctrl+Enter
+    /// arrive with their modifier instead of as the bytes of Enter and Ctrl+J. Terminals without
+    /// the protocol ignore the request.
+    fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()>;
     /// The cursor position as (column, row), or `None` if the terminal did not say.
     fn cursor_position(&mut self) -> io::Result<Option<(u16, u16)>>;
     /// Blocks until the next event.
@@ -59,6 +70,17 @@ impl Backend for Tty {
             stderr.write_all(b"\x1b[?1000h\x1b[?1006h")?;
             stderr.flush()
         }
+    }
+
+    #[cfg(unix)]
+    fn set_modified_keys(&mut self, enabled: bool) -> io::Result<()> {
+        write_modified_keys(&mut io::stderr(), enabled)
+    }
+
+    #[cfg(windows)]
+    fn set_modified_keys(&mut self, _enabled: bool) -> io::Result<()> {
+        // The console reports every key with its modifiers
+        Ok(())
     }
 
     #[cfg(unix)]
@@ -136,6 +158,33 @@ fn parse_cursor_reply(reply: &[u8]) -> Option<(u16, u16)> {
     ))
 }
 
+/// Whether this process turned the kitty keyboard protocol on and has not turned it off yet.
+#[cfg(unix)]
+static MODIFIED_KEYS: AtomicBool = AtomicBool::new(false);
+
+/// Writes the request that turns the kitty keyboard protocol on or off, unless it is already in
+/// that state. The terminal keeps the requests on a stack, and both the [`Ui`](super::Ui) and
+/// the panic hook turn the protocol off. A second pop would remove flags the shell had pushed.
+#[cfg(unix)]
+fn write_modified_keys(out: &mut impl Write, enabled: bool) -> io::Result<()> {
+    if MODIFIED_KEYS.load(Ordering::Relaxed) == enabled {
+        return Ok(());
+    }
+
+    if enabled {
+        execute!(
+            out,
+            PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)
+        )?;
+    } else {
+        execute!(out, PopKeyboardEnhancementFlags)?;
+    }
+
+    // Recorded only once the request is written, so a failed write is not taken for a change
+    MODIFIED_KEYS.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
 /// Windows consoles only understand escape sequences once virtual terminal processing is turned
 /// on for the handle that is written to. The prompt draws on stderr, since stdout carries the
 /// result.
@@ -160,6 +209,8 @@ pub fn enable_ansi_output() {
 /// Puts the terminal back in a usable state. For panic hooks, where the [`Ui`](super::Ui) cannot do it.
 pub fn restore_terminal() {
     let mut stderr = io::stderr();
+    #[cfg(unix)]
+    let _ = write_modified_keys(&mut stderr, false);
     let _ = execute!(stderr, DisableMouseCapture);
     let _ = terminal::disable_raw_mode();
     let _ = stderr.write_all(b"\x1b[?25h");
@@ -176,5 +227,43 @@ mod tests {
         assert_eq!(parse_cursor_reply(b"typed\x1b[2;3R"), Some((2, 1)));
         assert_eq!(parse_cursor_reply(b"\x1b[0;1R"), None);
         assert_eq!(parse_cursor_reply(b"garbage"), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn modified_keys_are_turned_off_once_and_only_after_being_turned_on() {
+        let mut out = Vec::new();
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"", "nothing was turned on");
+
+        write_modified_keys(&mut out, true).unwrap();
+        write_modified_keys(&mut out, false).unwrap();
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u");
+
+        // A request that could not be written is asked again
+        assert!(write_modified_keys(&mut Broken, true).is_err());
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u", "nothing was turned on");
+
+        write_modified_keys(&mut out, true).unwrap();
+        assert!(write_modified_keys(&mut Broken, false).is_err());
+        write_modified_keys(&mut out, false).unwrap();
+        assert_eq!(out, b"\x1b[>1u\x1b[<1u\x1b[>1u\x1b[<1u");
+    }
+
+    /// A writer that always fails.
+    #[cfg(unix)]
+    struct Broken;
+
+    #[cfg(unix)]
+    impl Write for Broken {
+        fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+            Err(io::Error::other("broken"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
     }
 }
