@@ -203,10 +203,18 @@ fn get_choices(entry: &Entry) -> Vec<Entry> {
         });
     }
 
-    // Get files in directory
-    if let Ok(entries) = fs::read_dir(&entry.path) {
-        for entry in entries.flatten() {
-            result_vector.push(Entry::from_dir_entry(&entry));
+    // Get files in directory. A link that denies listing, like `C:\Documents and Settings`,
+    // lists its target, and its entries keep paths under the link.
+    let folder = Path::new(&entry.path);
+    let listing = fs::read_dir(folder).or_else(|_| fs::read_dir(fs::canonicalize(folder)?));
+    if let Ok(entries) = listing {
+        for dir_entry in entries.flatten() {
+            let mut item = Entry::from_dir_entry(&dir_entry);
+            item.path = folder
+                .join(dir_entry.file_name())
+                .to_string_lossy()
+                .to_string();
+            result_vector.push(item);
         }
     }
 
@@ -250,6 +258,22 @@ mod tests {
         let choices = get_choices(&current);
         assert_eq!(choices[0].name, "..");
         assert_eq!(modified_target(&current, &choices[0]), "/lsi/missing");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn lists_a_junction_that_denies_listing_through_its_target() {
+        let junction = r"C:\Documents and Settings";
+        let choices = get_choices(&folder("Documents and Settings", junction));
+
+        let listed: Vec<_> = choices
+            .iter()
+            .filter(|choice| choice.name != "..")
+            .collect();
+        assert!(listed.iter().all(|choice| choice.name != "<Open>"));
+        assert!(listed
+            .iter()
+            .all(|choice| choice.path.starts_with(&format!(r"{junction}\"))));
     }
 
     #[test]
