@@ -41,13 +41,12 @@ jobs:
       EXT: ${{ contains(matrix.name, 'windows') && 'zip' || 'tar.gz' }}
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          targets: ${{ matrix.targets }}
+      - name: Install Rust toolchain
+        run: rustup toolchain install nightly --profile minimal --target ${{ matrix.targets }} && rustup default nightly
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.name }}
 
@@ -130,6 +129,6 @@ jobs:
         run: cp "${{ steps.filename.outputs.FILENAME }}" "${{ steps.filename.outputs.LEGACY_FILENAME }}"
 
       - name: Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           files: lsi_*.${{ env.EXT }}
