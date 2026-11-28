@@ -1,17 +1,19 @@
 name: Release
 
 on:
-  release:
-    types: [created]
+  push:
+    tags: ['v*']
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
 
 jobs:
-  release:
-    name: release ${{ matrix.name }}
+  build:
+    name: build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -128,7 +130,38 @@ jobs:
         shell: bash
         run: cp "${{ steps.filename.outputs.FILENAME }}" "${{ steps.filename.outputs.LEGACY_FILENAME }}"
 
-      - name: Release
-        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          files: lsi_*.${{ env.EXT }}
+          name: ${{ matrix.name }}
+          path: lsi_*.${{ env.EXT }}
+          if-no-files-found: error
+
+  # Releases are immutable once published, so assets go into a draft that is published by hand
+
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: Upload to draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" > /dev/null 2>&1 ||
+            gh release create "$TAG" --draft --verify-tag --title "$TAG" --generate-notes
+          gh release upload "$TAG" dist/* --clobber
