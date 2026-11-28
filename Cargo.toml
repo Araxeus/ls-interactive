@@ -23,7 +23,7 @@ encoding_rs = "0.8.44"
 fuzzy-matcher = "0.3.7"
 crossterm = "0.29.0"
 unicode-segmentation = "1.13.3"
-cached = "4.0.3"
+cached = "4.2.0"
 unicode-width = "0.2.3"
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62.2", features = ["Win32_Globalization", "Win32_Storage_FileSystem", "Win32_System_Console"] }
